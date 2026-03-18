@@ -1,0 +1,30 @@
+:root {
+  /* Color Tokens - Modern HSL Palette */
+  --primary-h: 220;
+  --primary-s: 90%;
+  --primary-l: 55%;
+  
+  --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
+  --primary-dark: hsl(var(--primary-h), var(--primary-s), 45%);
+  --primary-light: hsl(var(--primary-h), var(--primary-s), 95%);
+  
+  --bg-color: #0f172a; 
+  --text-color: #f1f5f9;
+  --text-muted: #94a3b8;
+  
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 12px;
+  
+  /* Spacing & Borders */
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout Constants */
+  --sidebar-width: 260px;
+  --navbar-height: 70px;
+}

@@ -2,13 +2,12 @@ import './index.css'
 import React from "react"
 import ReactDOM from "react-dom/client"
 import App from "./App"
-
-import { setupInterceptors } from "./interceptors/axiosInterceptor"
-
-setupInterceptors()
+import { AuthProvider } from "./features/auth/context/AuthContext"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>
 )
