@@ -5,13 +5,30 @@ import { Button } from "../../../shared/components/ui/Button"
 import { OAuthButtons } from "../components/OAuthButtons"
 import { showAlert } from "../../../shared/utils/alerts"
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+
 export const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" })
 
+  const validate = (data: { email: string; password: string }) => {
+    if (!emailRegex.test(data.email)) {
+      showAlert.warning("Email inválido", "Por favor ingresa un correo electrónico válido.")
+      return false
+    }
+    if (!passwordRegex.test(data.password)) {
+      showAlert.warning("Contraseña débil", "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.")
+      return false
+    }
+    return true
+  }
+
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!validate(loginData)) return
+    
     try {
       await login(loginData)
       showAlert.success("¡Bienvenido de nuevo!", "Has iniciado sesión correctamente.")
@@ -23,6 +40,8 @@ export const Login = () => {
 
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!validate(registerData)) return
+    
     try {
       await register(registerData)
       showAlert.success("Cuenta creada", "Te has registrado con éxito. Ahora puedes acceder.")
