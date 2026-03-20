@@ -8,7 +8,7 @@ export const OAuthButtons = () => {
   const handleOAuth = async (provider: string) => {
     console.log(`Iniciando flujo OAuth con: ${provider}`);
     // Aquí iría la lógica de redirección al proveedor
-    // loginWithOAuth(provider, "temp-token");
+    // loginWithOAuth(provider, "token");
   };
 
   return (

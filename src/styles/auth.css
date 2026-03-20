@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(255, 174, 0, 0.918) 0%, rgba(0, 76, 255, 0.952) 100%),
+  background: linear-gradient(135deg, rgba(105, 130, 138, 0.918) 0%, rgba(0, 76, 255, 0.952) 100%),
               url('../assets/images/m_wnb.jpg') no-repeat center/cover;
 }
 

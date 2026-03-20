@@ -1,0 +1,54 @@
+[
+  {
+    "id": "role-admin",
+    "name": "ADMIN",
+    "description": "Administrador total del sistema con todos los permisos.",
+    "activo": true,
+    "permisos": [
+      { "modulo": "roles", "leer": true, "escribir": true, "editar": true, "eliminar": true },
+      { "modulo": "users", "leer": true, "escribir": true, "editar": true, "eliminar": true },
+      { "modulo": "buses", "leer": true, "escribir": true, "editar": true, "eliminar": true },
+      { "modulo": "routes", "leer": true, "escribir": true, "editar": true, "eliminar": true },
+      { "modulo": "dashboard", "leer": true, "escribir": true, "editar": true, "eliminar": true }
+    ]
+  },
+  {
+    "id": "role-supervisor",
+    "name": "SUPERVISOR",
+    "description": "Gestiona buses y rutas, pero no usuarios ni roles.",
+    "activo": true,
+    "permisos": [
+      { "modulo": "roles", "leer": true, "escribir": false, "editar": false, "eliminar": false },
+      { "modulo": "users", "leer": true, "escribir": false, "editar": false, "eliminar": false },
+      { "modulo": "buses", "leer": true, "escribir": true, "editar": true, "eliminar": false },
+      { "modulo": "routes", "leer": true, "escribir": true, "editar": true, "eliminar": false },
+      { "modulo": "dashboard", "leer": true, "escribir": true, "editar": true, "eliminar": true }
+    ]
+  },
+  {
+    "id": "role-operator",
+    "name": "OPERADOR",
+    "description": "Solo puede ver y editar buses.",
+    "activo": true,
+    "permisos": [
+      { "modulo": "buses", "leer": true, "escribir": false, "editar": true, "eliminar": false },
+      { "modulo": "dashboard", "leer": true, "escribir": false, "editar": false, "eliminar": false }
+    ]
+  },
+  {
+    "id": "role-guest",
+    "name": "INVITADO",
+    "description": "Acceso de solo lectura al dashboard.",
+    "activo": true,
+    "permisos": [
+      { "modulo": "dashboard", "leer": true, "escribir": false, "editar": false, "eliminar": false }
+    ]
+  },
+  {
+    "id": "role-inactive",
+    "name": "INACTIVO",
+    "description": "Rol deshabilitado temporalmente.",
+    "activo": false,
+    "permisos": []
+  }
+]

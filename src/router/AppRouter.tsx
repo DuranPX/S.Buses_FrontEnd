@@ -5,8 +5,16 @@ import Dashboard from "../features/dashboard/pages/Dashboard"
 import AdminRoles from "../features/roles/pages/AdminRoles"
 import Landing from "../features/landing/pages/Landing"
 import MainLayout from "../shared/layouts/MainLayout"
+import { ProtectedRoute } from "./ProtectedRoute"
 import { PrivateRoute } from "../routes/PrivateRoute"
 import { PublicOnlyRoute } from "../routes/PublicOnlyRoute"
+import { MODULES } from "../shared/config/modules"
+
+// New Pages
+import VerifyCode from "../features/auth/pages/VerifyCode"
+import ForgotPassword from "../features/auth/pages/ForgotPassword"
+import ResetPassword from "../features/auth/pages/ResetPassword"
+import { AuthFlowGuard } from "../features/auth/components/AuthFlowGuard"
 
 export default function AppRouter() {
   return (
@@ -20,6 +28,28 @@ export default function AppRouter() {
           </PublicOnlyRoute>
         } />
 
+        <Route path="/forgot-password" element={
+          <PublicOnlyRoute>
+            <ForgotPassword />
+          </PublicOnlyRoute>
+        } />
+
+        <Route path="/reset-password" element={
+          <PublicOnlyRoute>
+            <AuthFlowGuard>
+              <ResetPassword />
+            </AuthFlowGuard>
+          </PublicOnlyRoute>
+        } />
+
+        <Route path="/verify-code" element={
+          <PublicOnlyRoute>
+            <AuthFlowGuard>
+              <VerifyCode />
+            </AuthFlowGuard>
+          </PublicOnlyRoute>
+        } />
+
         {/* Rutas Protegidas con Layout de Administración */}
         <Route
           element={
@@ -28,8 +58,17 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin/roles" element={<AdminRoles />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute permission={{ module: MODULES.DASHBOARD, action: 'leer' }}>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/roles" element={
+            <ProtectedRoute permission={{ module: MODULES.ROLES, action: 'leer' }}>
+              <AdminRoles />
+            </ProtectedRoute>
+          } />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
