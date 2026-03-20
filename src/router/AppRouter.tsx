@@ -12,10 +12,8 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta Pública Inicial */}
         <Route path="/" element={<Landing />} />
         
-        {/* Rutas de Autenticación */}
         <Route path="/login" element={
           <PublicOnlyRoute>
             <Login />
@@ -32,10 +30,8 @@ export default function AppRouter() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/roles" element={<AdminRoles />} />
-          {/* Aquí añadirás más rutas internas en el futuro */}
         </Route>
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
