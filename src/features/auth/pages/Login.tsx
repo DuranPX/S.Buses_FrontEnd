@@ -1,14 +1,18 @@
 import { useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
 import { login, register } from "../services/auth.service"
 import { InputField } from "../../../shared/components/forms/InputField"
 import { Button } from "../../../shared/components/ui/Button"
 import { OAuthButtons } from "../components/OAuthButtons"
 import { showAlert } from "../../../shared/utils/alerts"
+import { useAuthFlow } from "../context/AuthFlowContext"
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
 
 export const Login = () => {
+  const navigate = useNavigate()
+  const { setAuthFlow } = useAuthFlow()
   const [isSignUp, setIsSignUp] = useState(false)
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" })
@@ -29,12 +33,29 @@ export const Login = () => {
     e.preventDefault()
     if (!validate(loginData)) return
     
+    // Simular reCAPTCHA v3
+    const recaptchaToken = "mock-recaptcha-token-login-" + Math.random().toString(36).substring(7);
+    console.log("reCAPTCHA simulated for Login:", recaptchaToken);
+    
+    // Verificar si se requiere 2FA para este usuario simulado
+    if (loginData.email === "admin@buses.com") {
+      setAuthFlow({ 
+        requires2FA: true, 
+        email: loginData.email, 
+        expiresAt: Date.now() + 60000, 
+        attemptsLeft: 3 
+      });
+      showAlert.info("Verificación requerida", "Se ha enviado un código a tu correo.");
+      navigate("/verify-code");
+      return;
+    }
+
     try {
-      await login(loginData)
-      showAlert.success("¡Bienvenido de nuevo!", "Has iniciado sesión correctamente.")
-      setTimeout(() => window.location.href = "/dashboard", 1500)
+      await login({ ...loginData, recaptchaToken } as any);
+      showAlert.success("¡Bienvenido de nuevo!", "Has iniciado sesión correctamente.");
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (error) {
-      showAlert.error("Error de acceso", "Las credenciales no son válidas.")
+      showAlert.error("Error de acceso", "Las credenciales no son válidas.");
     }
   }
 
@@ -42,8 +63,12 @@ export const Login = () => {
     e.preventDefault()
     if (!validate(registerData)) return
     
+    // Simular reCAPTCHA v3
+    const recaptchaToken = "mock-recaptcha-token-register-" + Math.random().toString(36).substring(7);
+    console.log("reCAPTCHA simulated for Register:", recaptchaToken);
+    
     try {
-      await register(registerData)
+      await register({ ...registerData, recaptchaToken } as any)
       showAlert.success("Cuenta creada", "Te has registrado con éxito. Ahora puedes acceder.")
       setIsSignUp(false)
     } catch (error) {
@@ -105,7 +130,7 @@ export const Login = () => {
               onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
               required
             />
-            <a href="#" style={{ margin: '1rem 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>¿Olvidaste tu contraseña?</a>
+            <Link to="/forgot-password" style={{ margin: '1rem 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>¿Olvidaste tu contraseña?</Link>
             <Button type="submit" label="Entrar" style={{ width: '100%' }} />
           </form>
         </div>

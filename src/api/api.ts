@@ -8,7 +8,7 @@ const api = axios.create({
   },
 });
 
-// Configurar interceptores
+// interceptores
 setupInterceptors(api);
 
 export default api;

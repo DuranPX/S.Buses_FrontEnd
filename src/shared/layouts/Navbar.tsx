@@ -1,7 +1,7 @@
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 export const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, activeRole, logout } = useAuth();
 
   return (
     <nav className="navbar">
@@ -13,7 +13,7 @@ export const Navbar = () => {
         <div className="user-profile-menu">
           <div className="user-info" style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user?.name || "Usuario"}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user?.role || "GUEST"}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{activeRole?.name || "GUEST"}</div>
           </div>
           <div className="avatar">
             {(user?.name || "U")[0]}

@@ -1,7 +1,7 @@
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 export const setupInterceptors = (api: AxiosInstance) => {
-  // Request Interceptor: Inyectar Token Bearer
+  // Interceptor: Inyectar Token Bearer
   api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       const token = localStorage.getItem("token");
@@ -13,7 +13,7 @@ export const setupInterceptors = (api: AxiosInstance) => {
     (error) => Promise.reject(error)
   );
 
-  // Response Interceptor: Manejo de errores globales (401, etc.)
+  // Response Interceptor: Manejo de errores
   api.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error) => {

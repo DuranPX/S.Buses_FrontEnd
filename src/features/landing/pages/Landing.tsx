@@ -47,7 +47,7 @@ export const Landing = () => {
             La forma más fácil de <br />
             <span className="hero-rotating-text">
               <RotatingText
-                texts={['viajar', 'trabajar', 'gestionar', 'organizar', 'crecer']}
+                texts={['Viajar', 'Trabajar', 'Gestionar', 'Organizar', 'Crecer']}
                 mainClassName="rotating-text-segment"
                 staggerFrom={"last"}
                 initial={{ y: "100%", opacity: 0 }}

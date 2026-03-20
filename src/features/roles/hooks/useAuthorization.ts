@@ -1,31 +1,39 @@
 import { useAuth } from "../../auth/hooks/useAuth";
+import type { ModuleName, ActionType } from "../../../shared/config/modules";
 
 export const useAuthorization = () => {
-  const { user } = useAuth();
+  const { activeRole } = useAuth();
 
-  const hasRole = (role: string) => {
-    return user?.role === role;
-  };
+  /**
+   * Checks if the active role has a specific permission for a module.
+   * @param module The module name (e.g., 'roles', 'users', 'buses').
+   * @param action The action type ('leer', 'escribir', 'editar', 'eliminar').
+   * @returns boolean
+   */
+  const can = (module: ModuleName, action: ActionType): boolean => {
+    if (!activeRole || !activeRole.activo) return false;
 
-  const hasPermission = (permission: string) => {
-    // Aquí iría la lógica para verificar permisos granulares
-    // Por ahora simulamos que el admin tiene todo
-    if (user?.role === "ADMIN") return true;
+    // Admin has full permissions (short-circuit for simplicity if needed, 
+    // but better to check the actual permissions list in the role)
+    // if (activeRole.name === 'ADMIN') return true;
+
+    const permission = activeRole.permisos.find((p: any) => p.modulo === module);
     
-    // Ejemplo de permisos mockeados
-    const mockPermissions: Record<string, string[]> = {
-      "USER": ["VIEW_DASHBOARD"],
-      "OPERATOR": ["VIEW_DASHBOARD", "EDIT_BUSES"],
-    };
+    if (!permission) return false;
 
-    const userPermissions = user?.role ? mockPermissions[user.role] || [] : [];
-    return userPermissions.includes(permission);
+    return !!permission[action];
   };
+
+  /**
+   * Shortcut to check if the user has any permission in a module that starts with 'leer'.
+   * Useful for sidebar visibility.
+   */
+  const canRead = (module: ModuleName): boolean => can(module, 'leer');
 
   return {
-    hasRole,
-    hasPermission,
-    role: user?.role,
+    can,
+    canRead,
+    activeRole,
   };
 };
 
