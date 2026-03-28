@@ -58,27 +58,103 @@ El sistema sigue una arquitectura basada en **microservicios**, donde el fronten
 # Estructura del Proyecto
 
 ```
-src
-│
-├── components
-│   ├── Button.tsx
-│   ├── InputField.tsx
-│   └── FormCard.tsx
-│
-├── pages
-│   ├── Login.tsx
-│   ├── Register.tsx
-│   ├── Dashboard.tsx
-│   └── AdminRoles.tsx
-│
-├── services
-│   └── api.ts
-│
-├── interceptors
-│   └── axiosInterceptor.ts
-│
-├── App.tsx
-└── main.tsx
+SRC 
+|   App.css
+|   App.tsx
+|   index.css
+|   main.tsx
++---api
+|       api.ts
+|       axiosInterceptor.ts
++---assets
+|   |   react.svg
+|   \---images
+|           azure provider.png
+|           Catedral.avif
+|           github_provider.png
+|           google_provider.png
+|           hero-bg.png
+|           modern-city-bus-motion-yellow-public-vehicle-speed-blur-effect.jpg
+|           mzls_bg.jpg
+|           m_wnb.jpg
+|           vehiculo_1.png
+|           Vehiculo_2.jpg
+|           Vehiculo_3.webp
++---features
+|   +---auth
+|   |   +---components
+|   |   |       AuthFlowGuard.tsx
+|   |   |       OAuthButtons.tsx
+|   |   |       RoleSelector.tsx
+|   |   +---context
+|   |   |       AuthContext.tsx
+|   |   |       AuthFlowContext.tsx
+|   |   +---data
+|   |   |       mockUsers.json
+|   |   +---hooks
+|   |   |       useAuth.ts
+|   |   +---pages
+|   |   |       ForgotPassword.tsx
+|   |   |       Login.tsx
+|   |   |       ResetPassword.tsx
+|   |   |       VerifyCode.tsx
+|   |   \---services
+|   |           auth.service.tsx
+|   +---dashboard
+|   |   \---pages
+|   |           Dashboard.tsx
+|   +---landing
+|   |   \---pages
+|   |           Landing.tsx
+|   \---roles
+|       +---components
+|       +---data
+|       |       mockRoles.json
+|       +---hooks
+|       |       useAuthorization.ts
+|       \---pages
+|               AdminRoles.tsx
++---layouts
+|       MainLayout.tsx
++---pages
++---router
+|       AppRouter.tsx
+|       AuthGuard.tsx
+|       ProtectedRoute.tsx
++---routes
+|       PrivateRoute.tsx
+|       PublicOnlyRoute.tsx
++---shared
+|   +---components
+|   |   +---cards
+|   |   |       FormCard.tsx
+|   |   +---feedback
+|   |   |       AccessDenied.tsx
+|   |   +---forms
+|   |   |       InputField.tsx
+|   |   \---ui
+|   |           Button.tsx
+|   |           Grainient.css
+|   |           Grainient.tsx
+|   |           Loader.tsx
+|   |           RotatingText.css
+|   |           RotatingText.tsx
+|   +---config
+|   |       modules.tsx
+|   +---layouts
+|   |       Footer.tsx
+|   |       MainLayout.tsx
+|   |       Navbar.tsx
+|   |       Sidebar.tsx
+|   \---utils
+|           alerts.ts
+\---styles
+        admin.css
+        auth.css
+        base.css
+        components.css
+        landing.css
+        variables.css
 ```
 
 ---
