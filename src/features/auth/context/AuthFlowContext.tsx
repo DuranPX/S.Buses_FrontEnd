@@ -6,6 +6,7 @@ interface AuthFlowState {
   expiresAt: number;
   attemptsLeft: number;
   resetToken?: string;
+  purpose?: "LOGIN" | "REGISTRO";
 }
 
 interface AuthFlowContextType {
@@ -20,6 +21,7 @@ const initialState: AuthFlowState = {
   email: "",
   expiresAt: 0,
   attemptsLeft: 3,
+  purpose: "LOGIN",
 };
 
 const AuthFlowContext = createContext<AuthFlowContextType | undefined>(undefined);

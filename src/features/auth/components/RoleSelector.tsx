@@ -3,11 +3,32 @@ import { FormCard } from "../../../shared/components/cards/FormCard";
 import { Button } from "../../../shared/components/ui/Button";
 import { Footer } from "../../../shared/layouts/Footer";
 import { Navbar } from "../../../shared/layouts/Navbar";
+import { selectRole } from "../services/auth.service";
+import { showAlert } from "../../../shared/utils/alerts";
+import { useState } from "react";
+import type { Role } from "../context/AuthContext";
 
 export const RoleSelector = () => {
-  const { user, setActiveRole, logout } = useAuthContext();
+  const { user, syncSession, logout } = useAuthContext();
+  const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
   if (!user) return null;
+
+  const handleRoleSelection = async (role: Role) => {
+    try {
+      setLoadingRole(role.name);
+      const data = await selectRole(role.name);
+      if (data && data.token && data.role) {
+        // Obtenemos el token definitivo de la BDD e inicializamos la sesión segura puramente en memoria
+        await syncSession(data.token, user.email, data.role);
+        showAlert.success("Perfil Seleccionado", `Has entrado como ${role.name}`);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingRole(null);
+    }
+  };
 
   return (
     <div className="role-selector-gate" style={{
@@ -43,12 +64,12 @@ export const RoleSelector = () => {
               {user.roles.map((role) => (
                 <div 
                   key={role.id} 
-                  onClick={() => setActiveRole(role)}
+                  onClick={() => !loadingRole && handleRoleSelection(role)}
                   style={{
                     padding: '1.5rem',
                     borderRadius: 'var(--radius-lg)',
                     border: '1px solid rgba(255,255,255,0.1)',
-                    cursor: 'pointer',
+                    cursor: loadingRole ? 'wait' : 'pointer',
                     transition: 'all 0.3s ease',
                     background: 'rgba(255,255,255,0.03)',
                     display: 'flex',
@@ -56,15 +77,18 @@ export const RoleSelector = () => {
                     gap: '0.75rem',
                     textAlign: 'left',
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    opacity: loadingRole && loadingRole !== role.name ? 0.5 : 1
                   }}
                   onMouseEnter={(e) => {
+                    if (loadingRole) return;
                     e.currentTarget.style.transform = 'translateY(-4px)';
                     e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
                     e.currentTarget.style.borderColor = 'var(--accent-color, #3b82f6)';
                     e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.3)';
                   }}
                   onMouseLeave={(e) => {
+                    if (loadingRole) return;
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
                     e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
@@ -96,7 +120,7 @@ export const RoleSelector = () => {
                     color: 'var(--accent-color, #3b82f6)',
                     letterSpacing: '0.05em'
                   }}>
-                    ENTRAR COMO {role.name}
+                    {loadingRole === role.name ? "INICIANDO SESIÓN..." : `ENTRAR COMO ${role.name}`}
                   </div>
                 </div>
               ))}

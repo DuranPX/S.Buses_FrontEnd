@@ -5,8 +5,24 @@ import { showAlert } from "../../../shared/utils/alerts";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { AccessDenied } from "../../../shared/components/feedback/AccessDenied";
 import { MODULES } from "../../../shared/config/modules";
-import mockRolesData from "../data/mockRoles.json";
 import type { Role, Permission } from "../../auth/context/AuthContext";
+import { securityApi } from "../../../api/api";
+
+const mapFromBackend = (data: any): Role => ({
+  id: data.id || data._id,
+  name: data.nombre,
+  description: data.descripcion,
+  activo: data.activo,
+  permisos: data.permisos || []
+});
+
+const mapToBackend = (role: Role): any => ({
+  id: role.id?.includes('role-') ? null : role.id,
+  nombre: role.name,
+  descripcion: role.description,
+  activo: role.activo,
+  permisos: role.permisos
+});
 
 export const AdminRoles = () => {
   const { can, activeRole } = useAuthorization();
@@ -18,9 +34,16 @@ export const AdminRoles = () => {
   if (!activeRole) return null;
   if (!can(MODULES.ROLES, 'leer')) return <AccessDenied module={MODULES.ROLES} />;
 
-  // Simulating API fetch
+  // API Call to dynamically fetch available roles from Backend
   useEffect(() => {
-    setRoles(mockRolesData as Role[]);
+    securityApi.get("/api/roles")
+      .then(res => {
+        setRoles(res.data.map(mapFromBackend));
+      })
+      .catch(err => {
+        console.error("Error cargando roles", err);
+        showAlert.error("Error", "No se pudieron cargar los roles del sistema.");
+      });
   }, []);
 
   const handleToggleStatus = (role: Role) => {
@@ -29,10 +52,16 @@ export const AdminRoles = () => {
     showAlert.warning(
       `¿Cambiar estado?`,
       `El rol ${role.name} pasará a estar ${role.activo ? 'inactivo' : 'activo'}.`
-    ).then((result) => {
+    ).then(async (result) => {
       if (result.isConfirmed) {
-        setRoles(roles.map(r => r.id === role.id ? { ...r, activo: !r.activo } : r));
-        showAlert.success("Actualizado", "Estado del rol modificado correctamente.");
+        try {
+          const updatedBackend = mapToBackend({ ...role, activo: !role.activo });
+          await securityApi.put(`/api/roles/${role.id}`, updatedBackend);
+          setRoles(roles.map(r => r.id === role.id ? { ...r, activo: !r.activo } : r));
+          showAlert.success("Actualizado", "Estado del rol modificado correctamente.");
+        } catch (error) {
+          showAlert.error("Error", "No se pudo actualizar el estado.");
+        }
       }
     });
   };
@@ -43,10 +72,15 @@ export const AdminRoles = () => {
     showAlert.warning(
       `Eliminar Rol`,
       `¿Estás seguro de que deseas eliminar el rol ${role.name}? Esta acción no se puede deshacer.`
-    ).then((result) => {
+    ).then(async (result) => {
       if (result.isConfirmed) {
-        setRoles(roles.filter(r => r.id !== role.id));
-        showAlert.success("Eliminado", "El rol ha sido eliminado.");
+        try {
+          await securityApi.delete(`/api/roles/${role.id}`);
+          setRoles(roles.filter(r => r.id !== role.id));
+          showAlert.success("Eliminado", "El rol ha sido eliminado.");
+        } catch (error) {
+          showAlert.error("Error", "No se pudo eliminar el rol.");
+        }
       }
     });
   };
@@ -65,18 +99,31 @@ export const AdminRoles = () => {
     setIsEditing(true);
   };
 
-  const saveRole = () => {
+  const saveRole = async () => {
     if (!selectedRole) return;
     
-    if (roles.find(r => r.id === selectedRole.id)) {
-      setRoles(roles.map(r => r.id === selectedRole.id ? selectedRole : r));
-    } else {
-      setRoles([...roles, selectedRole]);
+    try {
+      const payload = mapToBackend(selectedRole);
+      
+      if (roles.find(r => r.id === selectedRole.id)) {
+        // Edit
+        const res = await securityApi.put(`/api/roles/${selectedRole.id}`, payload);
+        const updatedRole = mapFromBackend(res.data);
+        setRoles(roles.map(r => r.id === selectedRole.id ? updatedRole : r));
+      } else {
+        // Create
+        const res = await securityApi.post(`/api/roles`, payload);
+        const newRole = mapFromBackend(res.data);
+        setRoles([...roles, newRole]);
+      }
+      
+      setIsEditing(false);
+      setSelectedRole(null);
+      showAlert.success("Guardado", "El rol ha sido guardado exitosamente.");
+    } catch (error) {
+      console.error(error);
+      showAlert.error("Error", "Ocurrió un error al guardar el rol.");
     }
-    
-    setIsEditing(false);
-    setSelectedRole(null);
-    showAlert.success("Guardado", "El rol ha sido guardado exitosamente.");
   };
 
   if (isEditing && selectedRole) {
@@ -105,7 +152,7 @@ export const AdminRoles = () => {
             <div className="permissions-config">
               <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Configuración de Permisos</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {Object.values(MODULES).map(mod => {
+                {Object.values(MODULES).filter(m => m !== 'dashboard').map(mod => {
                   const perm = selectedRole.permisos.find(p => p.modulo === mod) || { modulo: mod, leer: false, escribir: false, editar: false, eliminar: false };
                   
                   const updatePerm = (field: keyof Permission, value: boolean) => {

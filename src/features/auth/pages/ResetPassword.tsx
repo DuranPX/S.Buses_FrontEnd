@@ -4,6 +4,8 @@ import { InputField } from "../../../shared/components/forms/InputField"
 import { Button } from "../../../shared/components/ui/Button"
 import { showAlert } from "../../../shared/utils/alerts"
 import { useAuthFlow } from "../context/AuthFlowContext"
+import { verifyRecoveryCode } from "../services/auth.service"
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3"
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
 
@@ -11,14 +13,17 @@ export const ResetPassword = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { clearAuthFlow } = useAuthFlow()
-  const token = searchParams.get("token")
+  const { executeRecaptcha } = useGoogleReCaptcha()
+  
+  const email = searchParams.get("email")
+  const codigo = searchParams.get("codigo") || searchParams.get("token") // Fallback por si usan token
   
   const [passwordData, setPasswordData] = useState({
     password: "",
     confirmPassword: ""
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!passwordRegex.test(passwordData.password)) {
@@ -31,15 +36,32 @@ export const ResetPassword = () => {
       return
     }
 
-    // Validación simulada del token
-    if (!token) {
-      showAlert.error("Token inválido", "No se encontró un token de recuperación válido.")
+    if (!email || !codigo) {
+      showAlert.error("Enlace inválido", "El enlace de recuperación está incompleto o es inválido.")
       return
     }
 
-    showAlert.success("Contraseña actualizada", "Tu contraseña ha sido cambiada correctamente.")
-    clearAuthFlow()
-    setTimeout(() => navigate("/login"), 1500)
+    if (!executeRecaptcha) {
+      showAlert.error("Error", "reCAPTCHA no está disponible.")
+      return
+    }
+
+    const recaptchaToken = await executeRecaptcha("recovery")
+
+    try {
+      await verifyRecoveryCode({
+        email,
+        codigo,
+        newPassword: passwordData.password,
+        recaptchaToken
+      })
+
+      showAlert.success("Contraseña actualizada", "Tu contraseña ha sido cambiada correctamente.")
+      clearAuthFlow()
+      setTimeout(() => navigate("/login"), 1500)
+    } catch (err) {
+      // El mensaje de error ya es manejado por el servicio de auth
+    }
   }
 
   return (
@@ -71,9 +93,9 @@ export const ResetPassword = () => {
 
           <Button type="submit" label="Actualizar" style={{ width: '100%', marginTop: '1.5rem' }} />
 
-          {!token && (
-            <div style={{ color: 'var(--error)', marginTop: '1rem', fontSize: '0.8rem' }}>
-              Error: Falta el token de recuperación en la URL.
+          {(!email || !codigo) && (
+            <div style={{ color: 'var(--error)', marginTop: '1rem', fontSize: '0.8rem', textAlign: 'center' }}>
+              Error: Faltan parámetros en la URL (email o código).
             </div>
           )}
         </form>

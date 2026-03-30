@@ -4,11 +4,12 @@ import { useAuthFlow } from "../context/AuthFlowContext"
 import { useAuth } from "../hooks/useAuth"
 import { Button } from "../../../shared/components/ui/Button"
 import { showAlert } from "../../../shared/utils/alerts"
+import { verify2faCode, send2faCode } from "../services/auth.service"
 
 export const VerifyCode = () => {
   const navigate = useNavigate()
   const { authFlow, setAuthFlow, clearAuthFlow, decrementAttempts } = useAuthFlow()
-  const { login } = useAuth()
+  const { syncSession } = useAuth()
   const [code, setCode] = useState("")
   const [timeLeft, setTimeLeft] = useState(0)
   const [isExpired, setIsExpired] = useState(false)
@@ -39,35 +40,52 @@ export const VerifyCode = () => {
       return
     }
 
-    // Validación simulada: éxito si el código es 123456
-    if (code === "123456") {
-      try {
-        await login({ email: authFlow.email, password: "mock-password-verified" });
+    try {
+      const result = await verify2faCode(authFlow.email, code)
+      
+      // La API debe retornar el JWT como una cadena o un objeto con prop token.
+      // El auth.service.ts lo guarda en local storage de cualquier modo, pero lo pasaremos explícitamente si lo tenemos, o lo recuperaremos.
+      const savedToken = localStorage.getItem("token")
+      
+      if (savedToken || (result && result.token)) {
+        syncSession(result?.token || savedToken, authFlow.email);
         showAlert.success("¡Verificación exitosa!", "Has iniciado sesión correctamente.")
         clearAuthFlow()
         setTimeout(() => navigate("/dashboard"), 1000)
-      } catch (error) {
-        showAlert.error("Error", "No se pudo sincronizar la sesión.");
+      } else if (authFlow.purpose === "REGISTRO") {
+        // En Registro, el endpoint solo activa la cuenta en BDD pero NO devuelve JWT por seguridad,
+        // así que lo redireccionamos a Login para un inicio limpio.
+        showAlert.success("¡Cuenta Activada!", "Verificación exitosa. Ya puedes iniciar sesión.")
+        clearAuthFlow()
+        setTimeout(() => navigate("/login"), 1000)
+      } else {
+        // En caso excepcional que fue 200 pero no hay token válido en LOGIN
+        throw new Error("Token no recibido del servidor.")
       }
-    } else {
+    } catch (error) {
       decrementAttempts()
       const newAttempts = authFlow.attemptsLeft - 1
       if (newAttempts <= 0) {
-        showAlert.error("Código incorrecto", "Sin intentos restantes. Debes reenviar el código.")
-      } else {
-        showAlert.error("Código incorrecto", `Código inválido. Te quedan ${newAttempts} intentos.`)
+        showAlert.error("Intentos agotados", "Sin intentos restantes. Debes reenviar el código.")
       }
+      // El mensaje de error específico ya es manejado por el auth.service
     }
   }
 
-  const handleResend = () => {
-    setAuthFlow({
-      expiresAt: Date.now() + 60000,
-      attemptsLeft: 3
-    })
-    setIsExpired(false)
-    setCode("")
-    showAlert.success("Código reenviado", "Se ha enviado un nuevo código a tu correo.")
+  const handleResend = async () => {
+    try {
+      await send2faCode(authFlow.email, authFlow.purpose || "LOGIN");
+      setAuthFlow({
+        ...authFlow,
+        expiresAt: Date.now() + 60000,
+        attemptsLeft: 3
+      })
+      setIsExpired(false)
+      setCode("")
+      showAlert.success("Código reenviado", "Se ha enviado un nuevo código a tu correo.")
+    } catch(err) {
+      // El mensaje de error específico ya es manejado por el auth.service
+    }
   }
 
   return (
