@@ -3,26 +3,25 @@ import { useNavigate } from "react-router-dom"
 import { InputField } from "../../../shared/components/forms/InputField"
 import { Button } from "../../../shared/components/ui/Button"
 import { showAlert } from "../../../shared/utils/alerts"
+import { sendRecoveryCode } from "../services/auth.service"
 
 export const ForgotPassword = () => {
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Simular reCAPTCHA v3
-    const recaptchaToken = "mock-recaptcha-token-forgot-" + Math.random().toString(36).substring(7);
-    console.log("reCAPTCHA simulated for Forgot Password:", recaptchaToken);
-    
-    // Simulación
-    showAlert.success("Email enviado", `Se ha enviado un enlace de recuperación a ${email}.`)
-    setTimeout(() => {
-        // Redirigir al Login para que el usuario pueda simular "clic en el correo" 
-        // o navegar manualmente a /reset-password?token=mock123
-        showAlert.info("Nota de simulación", "Usa la URL /reset-password?token=abc123 para probar la siguiente etapa.");
-        navigate("/login");
-    }, 2000);
+    try {
+      await sendRecoveryCode(email)
+      showAlert.success("Email enviado", `Se ha enviado un enlace de recuperación a ${email}.`)
+      setTimeout(() => {
+          showAlert.info("Nota de simulación", "Usa la URL /reset-password?email=" + encodeURIComponent(email) + "&codigo=TU_CODIGO para continuar.");
+          navigate("/login");
+      }, 2000);
+    } catch(err) {
+      // El mensaje de error ya es manejado por el servicio de auth
+    }
   }
 
   return (

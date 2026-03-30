@@ -1,8 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { login as loginService, logout as logoutService } from "../services/auth.service";
-import mockRoles from "../../roles/data/mockRoles.json";
-import mockUsers from "../data/mockUsers.json";
+import { logout as logoutService, selectRole } from "../services/auth.service";
 import { useAuthFlow } from "./AuthFlowContext";
 
 export interface Permission {
@@ -34,7 +32,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   showRoleModal: boolean;
-  login: (data: any) => Promise<void>;
+  syncSession: (token: string, email?: string, explicitRole?: any) => Promise<void>;
   logout: () => void;
   setActiveRole: (role: Role) => void;
   setShowRoleModal: (show: boolean) => void;
@@ -49,44 +47,131 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showRoleModal, setShowRoleModal] = useState(false);
 
-  // Helper para resolver los IDs de rol a objetos completos (usando datos simulados por ahora)
-  const resolveRoles = useCallback((roleIds: string[]): Role[] => {
-    return roleIds
-      .map(id => (mockRoles as Role[]).find(r => r.id === id))
-      .filter((r): r is Role => !!r);
-  }, []);
-
   const handleSetActiveRole = (role: Role) => {
     setActiveRole(role);
     localStorage.setItem("activeRole", role.id);
     setShowRoleModal(false);
   };
 
+  const decodeJWT = (token: string): any => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const syncSession = async (token: string, fallbackEmail?: string, explicitRole?: any) => {
+    const payload = decodeJWT(token);
+    
+    // El payload del JWT normalmente contiene 'sub' como el email o id de usuario
+    const email = payload?.sub || fallbackEmail || "user@buses.com";
+    const name = payload?.name || email.split("@")[0];
+    
+    const tokenType = payload?.token_type;
+
+    if (tokenType === "general") {
+      // 1. TOKEN TEMPORAL ESPERANDO SELECCIÓN DE ROL
+      const rawRoles: string[] = payload?.roles || [];
+      
+      const draftRoles: Role[] = rawRoles.map((r: string) => ({
+        id: `role-${r.toLowerCase()}`,
+        name: r,
+        description: `Opción de perfil autodescubierta desde el token general`,
+        activo: true,
+        permisos: []
+      }));
+
+      // Set user but WITHOUT activeRole (forces Route Protection to show Mode Select)
+      setUser({ id: payload?.id || "user-1", name, email, roles: draftRoles });
+      setActiveRole(null);
+
+      // Flujo de auto-selección bajo la mesa (si solo tiene 1 rol)
+      if (rawRoles.length === 1) {
+        try {
+          const result = await selectRole(rawRoles[0]);
+          if (result && result.token && result.role) {
+            // Sincronizar en memoria pura sin tocar storage
+            return await syncSession(result.token, email, result.role);
+          }
+        } catch (error) {
+          console.error("Auto-selección fallida:", error);
+          // Si falla la auto seleccion lo forzamos visualmente por fallback
+          handleSetActiveRole(draftRoles[0]);
+        }
+      }
+
+    } else if (tokenType === "auth_role" || explicitRole) {
+      // 2. TOKEN DEFINITIVO DE PRIVILEGIO MINIMO
+      // El backend no inyecta el objeto gigante en el JWT, se provee en el body del auth/select-role
+      // o se recupera de localstorage (cachedRoleData)
+      const backendRole = explicitRole;
+      
+      const roleObj: Role = backendRole ? {
+        id: backendRole.id || backendRole._id || `role-${backendRole.nombre?.toLowerCase() || 'default'}`,
+        name: backendRole.nombre || backendRole.name || "ROLE_DESCONOCIDO",
+        description: backendRole.descripcion || backendRole.description || "Perfil de usuario",
+        activo: backendRole.activo ?? true,
+        permisos: backendRole.permisos || []
+      } : {
+        id: "role-default",
+        name: "USER",
+        description: "Rol Mínimo de Respaldo",
+        activo: true,
+        permisos: [
+          { modulo: "dashboard", leer: true, escribir: false, editar: false, eliminar: false }
+        ]
+      };
+
+      setUser({ id: payload?.id || "user-1", name, email, roles: [roleObj] });
+      handleSetActiveRole(roleObj);
+    } else {
+      // BACKWARD COMPATIBILITY
+      // En caso de que se use un JWT antiguo sin token_type
+      const rawRoles = payload?.roles || ["USER"];
+      const fallbackRole: Role = {
+        id: `role-${rawRoles[0].toLowerCase()}`,
+        name: rawRoles[0].toUpperCase(),
+        description: `Rol de Compatibilidad: ${rawRoles[0]}`,
+        activo: true,
+        permisos: [
+          { modulo: "dashboard", leer: true, escribir: false, editar: false, eliminar: false }
+        ]
+      };
+
+      setUser({ id: payload?.id || "user-1", name, email, roles: [fallbackRole] });
+      handleSetActiveRole(fallbackRole);
+    }
+  };
+
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const token = localStorage.getItem("token");
-      const storedRoleId = localStorage.getItem("activeRole");
-
+      
       if (token) {
-        // Solo si TENEMOS un token, intentamos restaurar la sesión (simulando por ahora)
-        const mockUserRaw = mockUsers[0]; // O buscar en la API real más tarde
-        const roles = resolveRoles(mockUserRaw.roles);
-        const initializedUser: User = { ...mockUserRaw, roles };
-        
-        setUser(initializedUser);
-
-        if (roles.length > 0) {
-          const roleFromStorage = roles.find(r => r.id === storedRoleId);
-          if (roleFromStorage && roleFromStorage.activo) {
-            setActiveRole(roleFromStorage);
-          } else if (roles.length === 1) {
-            handleSetActiveRole(roles[0]);
-          } else {
+        const payload = decodeJWT(token);
+        if (payload?.token_type === "auth_role") {
+          try {
+            // Rehidratar la memoria remotamente via API en pro del POLP
+            const { getMe } = await import("../services/auth.service");
+            const sessionData = await getMe();
+            await syncSession(token, undefined, sessionData.role);
+          } catch(err) {
+            console.error("Error validando sesión:", err);
+            // Fallback si la session venció
+            setUser(null);
             setActiveRole(null);
           }
+        } else {
+          // Token Temporal normal
+          await syncSession(token);
         }
       } else {
-        // No token -> No user (flujo manual )
         setUser(null);
         setActiveRole(null);
       }
@@ -94,30 +179,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     initAuth();
-  }, [resolveRoles]);
-
-  const login = async (data: any) => {
-    await loginService(data);
-    
-    const userMatch = mockUsers.find(u => u.email === data.email);
-    const mockUserRaw = userMatch || mockUsers[0];
-    const roles = resolveRoles(mockUserRaw.roles);
-    const loggedUser: User = { ...mockUserRaw, roles };
-
-    setUser(loggedUser);
-
-    if (roles.length === 1) {
-      handleSetActiveRole(roles[0]);
-    } else if (roles.length > 1) {
-      // Fuerza la selección del rol
-      setActiveRole(null);
-      localStorage.removeItem("activeRole");
-    } else {
-      // caso de uso, el usuario no tiene roles, se le asigna un rol por defecto en la aplicacion sera el de pasajero
-      const defaultRole = (mockRoles as Role[]).find(r => r.id === 'role-guest') || (mockRoles as Role[])[0];
-      handleSetActiveRole(defaultRole);
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const logout = () => {
     logoutService();
@@ -133,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated: !!user,
     isLoading,
     showRoleModal,
-    login,
+    syncSession,
     logout,
     setActiveRole: handleSetActiveRole,
     setShowRoleModal

@@ -1,9 +1,23 @@
 export const MODULES = {
-  ROLES: 'roles',
-  USERS: 'users',
-  BUSES: 'buses',
-  ROUTES: 'routes',
   DASHBOARD: 'dashboard',
+  USUARIOS: 'usuarios',
+  ROLES: 'roles',
+  EMPRESAS: 'empresas',
+  BUSES: 'buses',
+  CONDUCTORES: 'conductores',
+  RUTAS: 'rutas',
+  PARADEROS: 'paraderos',
+  PROGRAMACIONES: 'programaciones',
+  TURNOS: 'turnos',
+  CLIENTES: 'clientes',
+  PAGOS: 'pagos',
+  BOLETOS: 'boletos',
+  VALIDACIONES: 'validaciones',
+  INCIDENTES: 'incidentes',
+  MENSAJES: 'mensajes',
+  GRUPOS: 'grupos',
+  RESENAS: 'resenas',
+  RECARGAS: 'recargas',
 } as const;
 
 export type ModuleName = typeof MODULES[keyof typeof MODULES];

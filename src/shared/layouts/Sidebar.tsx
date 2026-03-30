@@ -32,7 +32,7 @@ export const Sidebar = () => {
           </NavLink>
         )}
 
-        {(canRead(MODULES.BUSES) || canRead(MODULES.ROUTES)) && (
+        {(canRead(MODULES.BUSES) || canRead(MODULES.RUTAS)) && (
           <div className="nav-group-label" style={{ padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
             Gestión
           </div>
@@ -48,13 +48,29 @@ export const Sidebar = () => {
           </NavLink>
         )}
 
-        {canRead(MODULES.ROUTES) && (
+        {canRead(MODULES.RUTAS) && (
           <NavLink
-            to="/routes"
+            to="/admin/rutas"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
             <span className="nav-icon">🗺️</span>
             <span>Rutas</span>
+          </NavLink>
+        )}
+
+        {canRead(MODULES.USUARIOS) && (
+          <div className="nav-group-label" style={{ padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Sistema
+          </div>
+        )}
+
+        {canRead(MODULES.USUARIOS) && (
+          <NavLink
+            to="/admin/usuarios"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <span className="nav-icon">👥</span>
+            <span>Usuarios</span>
           </NavLink>
         )}
       </nav>

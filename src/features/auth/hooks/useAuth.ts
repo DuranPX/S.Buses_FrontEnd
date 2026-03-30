@@ -1,7 +1,7 @@
 import { useAuthContext } from "../context/AuthContext";
 
 export const useAuth = () => {
-  const { user, activeRole, isAuthenticated, isLoading, showRoleModal, login, logout, setActiveRole, setShowRoleModal } = useAuthContext();
+  const { user, activeRole, isAuthenticated, isLoading, showRoleModal, syncSession, logout, setActiveRole, setShowRoleModal } = useAuthContext();
 
   return {
     user,
@@ -9,7 +9,7 @@ export const useAuth = () => {
     isAuthenticated,
     isLoading,
     showRoleModal,
-    login,
+    syncSession,
     logout,
     setActiveRole,
     setShowRoleModal,

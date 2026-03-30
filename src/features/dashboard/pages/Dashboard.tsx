@@ -39,7 +39,7 @@ export const Dashboard = () => {
           </FormCard>
         )}
 
-        {canRead(MODULES.ROUTES) && (
+        {canRead(MODULES.RUTAS) && (
           <FormCard title="Rutas y Paradas">
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
               Configura los recorridos y puntos de parada autorizados.
@@ -48,7 +48,7 @@ export const Dashboard = () => {
           </FormCard>
         )}
 
-        {canRead(MODULES.USERS) && (
+        {canRead(MODULES.USUARIOS) && (
           <FormCard title="Usuarios">
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
               Administra las cuentas de usuario y perfiles personales.

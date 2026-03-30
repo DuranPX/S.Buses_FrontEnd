@@ -6,16 +6,21 @@ import { Button } from "../../../shared/components/ui/Button"
 import { OAuthButtons } from "../components/OAuthButtons"
 import { showAlert } from "../../../shared/utils/alerts"
 import { useAuthFlow } from "../context/AuthFlowContext"
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3"
+import { useAuth } from "../hooks/useAuth"
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+const phoneRegex = /^[+]?[0-9]{7,15}$/
 
 export const Login = () => {
   const navigate = useNavigate()
   const { setAuthFlow } = useAuthFlow()
+  const { syncSession } = useAuth()
+  const { executeRecaptcha } = useGoogleReCaptcha()
   const [isSignUp, setIsSignUp] = useState(false)
   const [loginData, setLoginData] = useState({ email: "", password: "" })
-  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" })
+  const [registerData, setRegisterData] = useState({ name: "", lastName: "", email: "", password: "", phone: "" })
 
   const validate = (data: { email: string; password: string }) => {
     if (!emailRegex.test(data.email)) {
@@ -29,50 +34,91 @@ export const Login = () => {
     return true
   }
 
+  const validateRegistration = () => {
+    if (!validate(registerData)) return false;
+    
+    if (registerData.name.length < 2 || registerData.name.length > 50) {
+      showAlert.warning("Nombre inválido", "El nombre debe tener entre 2 y 50 caracteres.")
+      return false
+    }
+    if (registerData.lastName.length < 2 || registerData.lastName.length > 50) {
+      showAlert.warning("Apellido inválido", "El apellido debe tener entre 2 y 50 caracteres.")
+      return false
+    }
+    if (!phoneRegex.test(registerData.phone)) {
+      showAlert.warning("Teléfono inválido", "El teléfono debe tener entre 7 y 15 dígitos numéricos.")
+      return false
+    }
+    return true;
+  }
+
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!validate(loginData)) return
     
-    // Simular reCAPTCHA v3
-    const recaptchaToken = "mock-recaptcha-token-login-" + Math.random().toString(36).substring(7);
-    console.log("reCAPTCHA simulated for Login:", recaptchaToken);
-    
-    // Verificar si se requiere 2FA para este usuario simulado
-    if (loginData.email === "admin@buses.com") {
-      setAuthFlow({ 
-        requires2FA: true, 
-        email: loginData.email, 
-        expiresAt: Date.now() + 60000, 
-        attemptsLeft: 3 
-      });
-      showAlert.info("Verificación requerida", "Se ha enviado un código a tu correo.");
-      navigate("/verify-code");
-      return;
+    if (!executeRecaptcha) {
+      showAlert.error("Error", "reCAPTCHA no está disponible en este momento.")
+      return
     }
 
+    const recaptchaToken = await executeRecaptcha("login")
+    
     try {
-      await login({ ...loginData, recaptchaToken } as any);
-      showAlert.success("¡Bienvenido de nuevo!", "Has iniciado sesión correctamente.");
-      setTimeout(() => navigate("/dashboard"), 1500);
+      const result = await login({ ...loginData, recaptchaToken })
+      
+      const savedToken = localStorage.getItem("token")
+      
+      // Si el backend no devuelve token y tampoco está un token salvado temporalmente, significa que se envió el correo 2FA
+      if ((result && !result.token) && !savedToken) {
+        setAuthFlow({ 
+          requires2FA: true, 
+          email: loginData.email, 
+          expiresAt: Date.now() + 60000, 
+          attemptsLeft: 3 
+        })
+        showAlert.info("Verificación requerida", result.message || "Se ha enviado un código a tu correo.")
+        navigate("/verify-code")
+        return
+      }
+      
+      if (savedToken || (result && result.token)) {
+        // Usa el contexto de auth para decodificar el JWT y actualizar el estado global.
+        syncSession(result?.token || savedToken, loginData.email);
+        showAlert.success("¡Bienvenido de nuevo!", "Has iniciado sesión correctamente.")
+        setTimeout(() => navigate("/dashboard"), 1500)
+      }
     } catch (error) {
-      showAlert.error("Error de acceso", "Las credenciales no son válidas.");
+      // El error ya es manejado por el servicio de auth
     }
   }
 
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!validate(registerData)) return
+    if (!validateRegistration()) return
     
-    // Simular reCAPTCHA v3
-    const recaptchaToken = "mock-recaptcha-token-register-" + Math.random().toString(36).substring(7);
-    console.log("reCAPTCHA simulated for Register:", recaptchaToken);
+    if (!executeRecaptcha) {
+      showAlert.error("Error", "reCAPTCHA no está disponible.")
+      return
+    }
+
+    const recaptchaToken = await executeRecaptcha("register")
     
     try {
-      await register({ ...registerData, recaptchaToken } as any)
-      showAlert.success("Cuenta creada", "Te has registrado con éxito. Ahora puedes acceder.")
-      setIsSignUp(false)
+      await register({ ...registerData, recaptchaToken })
+      
+      // En vez de requerirle login otra vez como antes, iniciamos el flujo de verificación
+      setAuthFlow({ 
+        requires2FA: true, 
+        email: registerData.email, 
+        expiresAt: Date.now() + 60000, 
+        attemptsLeft: 3,
+        purpose: "REGISTRO" // Indicamos que es de Registro para que el re-envio y el verify sepan que NO recibirán Token
+      })
+
+      showAlert.info("Verificación de Correo", "Cuenta creada. Hemos enviado un código de activación a tu correo electrónico.")
+      navigate("/verify-code")
     } catch (error) {
-      showAlert.error("Error de registro", "No se pudo crear la cuenta. Inténtalo de nuevo.")
+      // El error ya es manejado por el servicio de auth
     }
   }
 
@@ -82,21 +128,36 @@ export const Login = () => {
         
         {/* Sign Up Form */}
         <div className="auth-form-container sign-up-container">
-          <form onSubmit={handleRegisterSubmit} className="glass" style={{ padding: '3rem', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <form onSubmit={handleRegisterSubmit} className="glass" style={{ padding: '2rem 3rem', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto' }}>
             <h1>Crear Cuenta</h1>
             <OAuthButtons />
             <span style={{ margin: '1rem 0', color: 'var(--text-muted)' }}>o usa tu email para registrarte</span>
-            <InputField
-              label="Nombre"
-              value={registerData.name}
-              onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-              required
-            />
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <InputField
+                label="Nombre"
+                value={registerData.name}
+                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                required
+              />
+              <InputField
+                label="Apellido"
+                value={registerData.lastName}
+                onChange={(e) => setRegisterData({ ...registerData, lastName: e.target.value })}
+                required
+              />
+            </div>
             <InputField
               label="Email"
               type="email"
               value={registerData.email}
               onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+              required
+            />
+            <InputField
+              label="Teléfono"
+              type="tel"
+              value={registerData.phone}
+              onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
               required
             />
             <InputField

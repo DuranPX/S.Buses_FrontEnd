@@ -8,7 +8,15 @@ const api = axios.create({
   },
 });
 
+export const securityApi = axios.create({
+  baseURL: import.meta.env.VITE_MS_SECURITY_API,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // interceptores
 setupInterceptors(api);
+setupInterceptors(securityApi);
 
 export default api;
