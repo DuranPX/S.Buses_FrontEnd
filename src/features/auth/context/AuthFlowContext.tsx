@@ -6,7 +6,7 @@ interface AuthFlowState {
   expiresAt: number;
   attemptsLeft: number;
   resetToken?: string;
-  purpose?: "LOGIN" | "REGISTRO";
+  purpose?: "LOGIN" | "REGISTRO" | "RECOVERY";
 }
 
 interface AuthFlowContextType {

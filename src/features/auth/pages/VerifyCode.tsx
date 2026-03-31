@@ -43,8 +43,6 @@ export const VerifyCode = () => {
     try {
       const result = await verify2faCode(authFlow.email, code)
       
-      // La API debe retornar el JWT como una cadena o un objeto con prop token.
-      // El auth.service.ts lo guarda en local storage de cualquier modo, pero lo pasaremos explícitamente si lo tenemos, o lo recuperaremos.
       const savedToken = localStorage.getItem("token")
       
       if (savedToken || (result && result.token)) {
@@ -53,13 +51,10 @@ export const VerifyCode = () => {
         clearAuthFlow()
         setTimeout(() => navigate("/dashboard"), 1000)
       } else if (authFlow.purpose === "REGISTRO") {
-        // En Registro, el endpoint solo activa la cuenta en BDD pero NO devuelve JWT por seguridad,
-        // así que lo redireccionamos a Login para un inicio limpio.
         showAlert.success("¡Cuenta Activada!", "Verificación exitosa. Ya puedes iniciar sesión.")
         clearAuthFlow()
         setTimeout(() => navigate("/login"), 1000)
       } else {
-        // En caso excepcional que fue 200 pero no hay token válido en LOGIN
         throw new Error("Token no recibido del servidor.")
       }
     } catch (error) {
@@ -68,13 +63,12 @@ export const VerifyCode = () => {
       if (newAttempts <= 0) {
         showAlert.error("Intentos agotados", "Sin intentos restantes. Debes reenviar el código.")
       }
-      // El mensaje de error específico ya es manejado por el auth.service
     }
   }
 
   const handleResend = async () => {
     try {
-      await send2faCode(authFlow.email, authFlow.purpose || "LOGIN");
+      await send2faCode(authFlow.email, authFlow.purpose as "LOGIN" | "REGISTRO");
       setAuthFlow({
         ...authFlow,
         expiresAt: Date.now() + 60000,
@@ -84,7 +78,6 @@ export const VerifyCode = () => {
       setCode("")
       showAlert.success("Código reenviado", "Se ha enviado un nuevo código a tu correo.")
     } catch(err) {
-      // El mensaje de error específico ya es manejado por el auth.service
     }
   }
 

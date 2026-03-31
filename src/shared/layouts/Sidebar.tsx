@@ -5,6 +5,47 @@ import { MODULES } from "../config/modules";
 export const Sidebar = () => {
   const { canRead } = useAuthorization();
 
+  const GROUPS = [
+    {
+      label: 'Administración',
+      items: [
+        { module: MODULES.USUARIOS, path: '/admin/usuarios', label: 'Usuarios' },
+        { module: MODULES.ROLES, path: '/admin/roles', label: 'Roles' },
+        { module: MODULES.EMPRESAS, path: '/admin/empresas', label: 'Empresas' },
+      ]
+    },
+    {
+      label: 'Operaciones',
+      items: [
+        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
+        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
+        { module: MODULES.RUTAS, path: '/rutas', label: 'Rutas' },
+        { module: MODULES.PARADEROS, path: '/paraderos', label: 'Paraderos' },
+        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
+        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
+        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Incidentes' },
+      ]
+    },
+    {
+      label: 'Comercial & Pasajeros',
+      items: [
+        { module: MODULES.CLIENTES, path: '/admin/clientes', label: 'Clientes' },
+        { module: MODULES.BOLETOS, path: '/boletos', label: 'Boletos' },
+        { module: MODULES.PAGOS, path: '/pagos', label: 'Pagos' },
+        { module: MODULES.RECARGAS, path: '/recargas', label: 'Recargas' },
+        { module: MODULES.VALIDACIONES, path: '/validaciones', label: 'Validaciones' },
+      ]
+    },
+    {
+      label: 'Social',
+      items: [
+        { module: MODULES.MENSAJES, path: '/mensajes', label: 'Mensajes' },
+        { module: MODULES.GRUPOS, path: '/grupos', label: 'Grupos' },
+        { module: MODULES.RESENAS, path: '/resenas', label: 'Reseñas' },
+      ]
+    }
+  ];
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -12,67 +53,34 @@ export const Sidebar = () => {
       </div>
 
       <nav className="sidebar-nav">
-        {canRead(MODULES.DASHBOARD) && (
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
-          </NavLink>
-        )}
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
+          <span>Dashboard</span>
+        </NavLink>
 
-        {canRead(MODULES.ROLES) && (
-          <NavLink
-            to="/admin/roles"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <span className="nav-icon">🛡️</span>
-            <span>Roles & Permisos</span>
-          </NavLink>
-        )}
+        {GROUPS.map((group, groupIdx) => {
+          const visibleItems = group.items.filter(item => canRead(item.module));
+          if (visibleItems.length === 0) return null;
 
-        {(canRead(MODULES.BUSES) || canRead(MODULES.RUTAS)) && (
-          <div className="nav-group-label" style={{ padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Gestión
-          </div>
-        )}
-
-        {canRead(MODULES.BUSES) && (
-          <NavLink
-            to="/buses"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <span className="nav-icon">🚌</span>
-            <span>Buses</span>
-          </NavLink>
-        )}
-
-        {canRead(MODULES.RUTAS) && (
-          <NavLink
-            to="/admin/rutas"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <span className="nav-icon">🗺️</span>
-            <span>Rutas</span>
-          </NavLink>
-        )}
-
-        {canRead(MODULES.USUARIOS) && (
-          <div className="nav-group-label" style={{ padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Sistema
-          </div>
-        )}
-
-        {canRead(MODULES.USUARIOS) && (
-          <NavLink
-            to="/admin/usuarios"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <span className="nav-icon">👥</span>
-            <span>Usuarios</span>
-          </NavLink>
-        )}
+          return (
+            <div key={groupIdx}>
+              <div className="nav-group-label" style={{ padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                {group.label}
+              </div>
+              {visibleItems.map(item => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <span>{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
