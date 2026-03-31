@@ -15,7 +15,7 @@ interface UserProfile {
   email: string;
   phone: string;
   address?: string;
-  roles: Role[]; // Extrapolando del modelo de roles
+  roles: Role[];
 }
 
 export const AdminUsers = () => {
@@ -25,11 +25,11 @@ export const AdminUsers = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
-  // Security barrier
+
   if (!activeRole) return null;
   if (!can(MODULES.USUARIOS, 'leer')) return <AccessDenied module={MODULES.USUARIOS} />;
 
-  // Fetch Data
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -99,11 +99,10 @@ export const AdminUsers = () => {
   const handleToggleRoleForUser = async (role: Role, isChecked: boolean) => {
     if (!selectedUser || !can(MODULES.USUARIOS, 'editar')) return;
     
-    // El backend se actualizará para aceptar el Nombre directamente en lugar del ID,
-    // así garantizamos que se guarde el Array Strings limpio en MongoDB.
+
     const roleIdentifier = role.name;
 
-    // Solo llamamos a la API si el usuario ya existe en Mongo
+
     if (!selectedUser.id.startsWith('tmp-')) {
       try {
         if (isChecked) {
@@ -118,7 +117,7 @@ export const AdminUsers = () => {
       }
     }
 
-    // Actualizar Estado UI
+
     let newRoles = [...selectedUser.roles];
     if (isChecked) {
       newRoles.push(role);
@@ -128,15 +127,14 @@ export const AdminUsers = () => {
     
     setSelectedUser({ ...selectedUser, roles: newRoles });
     
-    // Update main tracking array si ya existe
+
     if (!selectedUser.id.startsWith('tmp-')) {
       setUsers(users.map(u => u.id === selectedUser.id ? { ...u, roles: newRoles } : u));
     }
   };
 
   const saveUser = () => {
-    // A petición por bug del backend al modificar perfiles base, el botón sólo opera 
-    // como decoración para cerrar el panel (el checkbox asigna/quita roles asincrónicamente con éxito).
+
     setIsEditing(false);
     setSelectedUser(null);
   };
@@ -148,7 +146,7 @@ export const AdminUsers = () => {
         <FormCard title={selectedUser.id.startsWith('tmp-') ? "Alta de Usuario Administrativo" : `Editando: ${selectedUser.name}`}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1fr)', gap: '1.5rem' }}>
             
-            {/* Info Basica */}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem' }}>Nombre(s)</label>
@@ -172,7 +170,7 @@ export const AdminUsers = () => {
               </div>
             </div>
 
-            {/* Asignacion Roles Inteligente */}
+
             <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1.2rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.02)' }}>
               <h3 style={{ fontSize: '1rem', marginBottom: '0.3rem' }}>Roles Asignados</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjudica o retira privilegios de forma instantánea al habilitar el checkbox correspondiente.</p>
@@ -229,16 +227,16 @@ export const AdminUsers = () => {
             <div className="user-details" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}>
-                <span>✉️</span>
+                <span style={{ fontWeight: 600 }}>Email:</span>
                 <span style={{ color: 'var(--text-muted)' }}>{u.email}</span>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}>
-                <span>📱</span>
+                <span style={{ fontWeight: 600 }}>Tel:</span>
                 <span style={{ color: 'var(--text-muted)' }}>{u.phone}</span>
               </div>
 
               <div style={{ marginTop: '0.5rem' }}>
-                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, color: 'var(--text-muted)' }}>Manto Autorizado</span>
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, color: 'var(--text-muted)' }}>Rol(es) Autorizado(s)</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
                   {u.roles?.length ? u.roles.map((r: any) => {
                     const rName = typeof r === 'string' ? r : (r.nombre || r.name);

@@ -30,11 +30,11 @@ export const AdminRoles = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-  // Double Defense
+
   if (!activeRole) return null;
   if (!can(MODULES.ROLES, 'leer')) return <AccessDenied module={MODULES.ROLES} />;
 
-  // API Call to dynamically fetch available roles from Backend
+
   useEffect(() => {
     securityApi.get("/api/roles")
       .then(res => {
@@ -106,12 +106,12 @@ export const AdminRoles = () => {
       const payload = mapToBackend(selectedRole);
       
       if (roles.find(r => r.id === selectedRole.id)) {
-        // Edit
+
         const res = await securityApi.put(`/api/roles/${selectedRole.id}`, payload);
         const updatedRole = mapFromBackend(res.data);
         setRoles(roles.map(r => r.id === selectedRole.id ? updatedRole : r));
       } else {
-        // Create
+
         const res = await securityApi.post(`/api/roles`, payload);
         const newRole = mapFromBackend(res.data);
         setRoles([...roles, newRole]);

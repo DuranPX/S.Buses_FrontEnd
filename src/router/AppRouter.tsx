@@ -11,7 +11,7 @@ import { PublicOnlyRoute } from "../routes/PublicOnlyRoute"
 import { MODULES } from "../shared/config/modules"
 import { GenericModulePlaceholder } from "../shared/components/layouts/GenericModulePlaceholder"
 
-// New Pages
+
 import AdminUsers from "../features/users/pages/AdminUsers"
 import VerifyCode from "../features/auth/pages/VerifyCode"
 import ForgotPassword from "../features/auth/pages/ForgotPassword"
@@ -52,7 +52,7 @@ export default function AppRouter() {
           </PublicOnlyRoute>
         } />
 
-        {/* Rutas Protegidas con Layout de Administración */}
+
         <Route
           element={
             <PrivateRoute>
@@ -61,7 +61,7 @@ export default function AppRouter() {
           }
         >
           <Route path="/dashboard" element={
-            <ProtectedRoute permission={{ module: MODULES.DASHBOARD, action: 'leer' }}>
+            <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           } />
@@ -78,15 +78,26 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
-          {/* Scaffolding Dinámico de Módulos (En construcción) */}
+
           {[
             MODULES.EMPRESAS, MODULES.BUSES, MODULES.CONDUCTORES,
-            MODULES.RUTAS, MODULES.PARADEROS, MODULES.PROGRAMACIONES, MODULES.TURNOS,
-            MODULES.CLIENTES, MODULES.PAGOS, MODULES.BOLETOS, MODULES.VALIDACIONES,
-            MODULES.INCIDENTES, MODULES.MENSAJES, MODULES.GRUPOS, MODULES.RESENAS,
-            MODULES.RECARGAS
+            MODULES.PROGRAMACIONES, MODULES.TURNOS, MODULES.CLIENTES,
+            MODULES.INCIDENTES
           ].map(modulo => (
-             <Route key={modulo} path={`/admin/${modulo}`} element={
+             <Route key={`admin-${modulo}`} path={`/admin/${modulo}`} element={
+               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
+                 <GenericModulePlaceholder moduleName={modulo} />
+               </ProtectedRoute>
+             } />
+          ))}
+
+
+          {[
+            MODULES.RUTAS, MODULES.PARADEROS, MODULES.PAGOS, 
+            MODULES.BOLETOS, MODULES.VALIDACIONES, MODULES.MENSAJES, 
+            MODULES.GRUPOS, MODULES.RESENAS, MODULES.RECARGAS
+          ].map(modulo => (
+             <Route key={`public-${modulo}`} path={`/${modulo}`} element={
                <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
                  <GenericModulePlaceholder moduleName={modulo} />
                </ProtectedRoute>

@@ -6,7 +6,6 @@ export const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <span className="breadcrumb">Admin / <span style={{ color: 'white' }}>Dashboard</span></span>
       </div>
       
       <div className="navbar-right">

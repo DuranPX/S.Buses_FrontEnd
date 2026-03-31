@@ -16,9 +16,15 @@ export const AuthFlowGuard = ({ children }: Props) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Guardian para Reset Password (requiere token en la URL muchachos, es el /reset-password?token=abc123)
-  if (location.pathname === "/reset-password" && !searchParams.get("token")) {
-    return <Navigate to="/login" replace />;
+  // Guardian para Reset Password
+  if (location.pathname === "/reset-password") {
+    // Permitir el acceso si traemos el state nativo (AuthFlow) o si venimos por click en link de correo
+    const hasContext = !!authFlow.email;
+    const hasUrlParams = searchParams.get("token") || searchParams.get("codigo") || searchParams.get("email");
+    
+    if (!hasContext && !hasUrlParams) {
+      return <Navigate to="/login" replace />;
+    }
   }
 
   return children;

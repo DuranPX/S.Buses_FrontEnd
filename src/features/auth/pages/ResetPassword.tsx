@@ -12,11 +12,13 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$
 export const ResetPassword = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { clearAuthFlow } = useAuthFlow()
+  const { authFlow, clearAuthFlow } = useAuthFlow()
   const { executeRecaptcha } = useGoogleReCaptcha()
   
-  const email = searchParams.get("email")
-  const codigo = searchParams.get("codigo") || searchParams.get("token") // Fallback por si usan token
+  const emailVal = searchParams.get("email") || authFlow.email || ""
+  const codigoUrl = searchParams.get("codigo") || searchParams.get("token") || ""
+  
+  const [codigo, setCodigo] = useState(codigoUrl)
   
   const [passwordData, setPasswordData] = useState({
     password: "",
@@ -36,8 +38,8 @@ export const ResetPassword = () => {
       return
     }
 
-    if (!email || !codigo) {
-      showAlert.error("Enlace inválido", "El enlace de recuperación está incompleto o es inválido.")
+    if (!emailVal || !codigo || codigo.length < 6) {
+      showAlert.error("Datos incompletos", "Por favor ingresa el código de 6 dígitos completo que enviamos a tu correo.")
       return
     }
 
@@ -50,7 +52,7 @@ export const ResetPassword = () => {
 
     try {
       await verifyRecoveryCode({
-        email,
+        email: emailVal,
         codigo,
         newPassword: passwordData.password,
         recaptchaToken
@@ -70,8 +72,31 @@ export const ResetPassword = () => {
         <form onSubmit={handleSubmit} className="glass" style={{ padding: '3rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h1>Nueva Contraseña</h1>
           <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: '2rem' }}>
-            Ingresa tu nueva contraseña para acceder.
+            Ingresa el código que enviamos a <strong>{emailVal || 'tu correo'}</strong> y tu nueva contraseña.
           </p>
+
+          <div style={{ width: '100%', marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'left' }}>Código de Verificación</label>
+            <input
+              type="text"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              style={{
+                width: '100%',
+                letterSpacing: '0.8rem',
+                fontSize: '1.8rem',
+                textAlign: 'center',
+                padding: '0.8rem',
+                borderRadius: '12px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                outline: 'none'
+              }}
+              required
+            />
+          </div>
 
           <InputField
             label="Nueva Contraseña"
@@ -91,11 +116,27 @@ export const ResetPassword = () => {
             style={{ width: '100%', marginTop: '1rem' }}
           />
 
-          <Button type="submit" label="Actualizar" style={{ width: '100%', marginTop: '1.5rem' }} />
+          <Button type="submit" label="Actualizar Contraseña" style={{ width: '100%', marginTop: '1.5rem', opacity: (!emailVal || codigo.length < 6) ? 0.5 : 1 }} disabled={!emailVal || codigo.length < 6} />
 
-          {(!email || !codigo) && (
-            <div style={{ color: 'var(--error)', marginTop: '1rem', fontSize: '0.8rem', textAlign: 'center' }}>
-              Error: Faltan parámetros en la URL (email o código).
+          {!emailVal && (
+            <div style={{ color: 'var(--error)', marginTop: '1.5rem', fontSize: '0.85rem', textAlign: 'center' }}>
+              Error: No identificamos el email.
+              <br />
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                style={{
+                  marginTop: '0.5rem',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  textDecoration: 'underline'
+                }}
+              >
+                Solicitar código de nuevo
+              </button>
             </div>
           )}
         </form>
