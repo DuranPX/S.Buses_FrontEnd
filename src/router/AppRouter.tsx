@@ -17,6 +17,7 @@ import VerifyCode from "../features/auth/pages/VerifyCode"
 import ForgotPassword from "../features/auth/pages/ForgotPassword"
 import ResetPassword from "../features/auth/pages/ResetPassword"
 import { AuthFlowGuard } from "../features/auth/components/AuthFlowGuard"
+import AuthSuccess from "../features/auth/pages/AuthSuccess"
 
 export default function AppRouter() {
   return (
@@ -24,6 +25,8 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<Landing />} />
         
+        <Route path="/auth/success" element={<AuthSuccess />} />
+
         <Route path="/login" element={
           <PublicOnlyRoute>
             <Login />
