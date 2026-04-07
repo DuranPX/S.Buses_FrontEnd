@@ -49,7 +49,7 @@ export const RoleSelector = () => {
         <div style={{ maxWidth: '800px', width: '100%' }}>
           <FormCard title="Selección de Rol de Acceso">
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Bienvenido, {user.name}</h2>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Bienvenido, {user.name} {user.lastName}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
                 Tu cuenta tiene múltiples perfiles asociados. Por favor, selecciona con cuál deseas operar en esta sesión:
               </p>

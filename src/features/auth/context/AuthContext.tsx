@@ -22,6 +22,7 @@ export interface Role {
 export interface User {
   id: string;
   name: string;
+  lastName?: string;
   email: string;
   roles: Role[];
 }
@@ -32,7 +33,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   showRoleModal: boolean;
-  syncSession: (token: string, email?: string, explicitRole?: any) => Promise<void>;
+  syncSession: (token: string, email?: string, explicitRole?: any, explicitUser?: any) => Promise<void>;
   logout: () => void;
   setActiveRole: (role: Role) => void;
   setShowRoleModal: (show: boolean) => void;
@@ -66,12 +67,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const syncSession = async (token: string, fallbackEmail?: string, explicitRole?: any) => {
+  const syncSession = async (token: string, fallbackEmail?: string, explicitRole?: any, explicitUser?: any) => {
     const payload = decodeJWT(token);
     
     // El payload del JWT normalmente contiene 'sub' como el email o id de usuario
-    const email = payload?.sub || fallbackEmail || "user@buses.com";
-    const name = payload?.name || email.split("@")[0];
+    const email = explicitUser?.email || payload?.sub || fallbackEmail || "user@buses.com";
+    const name = explicitUser?.name || payload?.name || email.split("@")[0];
+    const lastName = explicitUser?.lastName || payload?.lastName || "";
     
     const tokenType = payload?.token_type;
 
@@ -88,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }));
 
       // Set user but WITHOUT activeRole (forces Route Protection to show Mode Select)
-      setUser({ id: payload?.id || "user-1", name, email, roles: draftRoles });
+      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: draftRoles });
       setActiveRole(null);
 
       // Flujo de auto-selección bajo la mesa (si solo tiene 1 rol)
@@ -128,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ]
       };
 
-      setUser({ id: payload?.id || "user-1", name, email, roles: [roleObj] });
+      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: [roleObj] });
       handleSetActiveRole(roleObj);
     } else {
       // BACKWARD COMPATIBILITY
@@ -144,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ]
       };
 
-      setUser({ id: payload?.id || "user-1", name, email, roles: [fallbackRole] });
+      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: [fallbackRole] });
       handleSetActiveRole(fallbackRole);
     }
   };
@@ -160,7 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Rehidratar la memoria remotamente via API en pro del POLP
             const { getMe } = await import("../services/auth.service");
             const sessionData = await getMe();
-            await syncSession(token, undefined, sessionData.role);
+            await syncSession(token, undefined, sessionData.role, sessionData.user);
           } catch(err) {
             console.error("Error validando sesión:", err);
             // Fallback si la session venció

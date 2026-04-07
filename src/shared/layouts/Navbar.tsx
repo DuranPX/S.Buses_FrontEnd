@@ -11,8 +11,8 @@ export const Navbar = () => {
       <div className="navbar-right">
         <div className="user-profile-menu">
           <div className="user-info" style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user?.name || "Usuario"}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{activeRole?.name || "GUEST"}</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user?.name} {user?.lastName}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{activeRole?.name}</div>
           </div>
           <div className="avatar">
             {(user?.name || "U")[0]}

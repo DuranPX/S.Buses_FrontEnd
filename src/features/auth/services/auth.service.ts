@@ -142,7 +142,7 @@ export const selectRole = async (roleName: string) => {
 
 export const getMe = async () => {
   const response = await securityApi.get("/auth/me");
-  return response.data; // { user: {}, role: {} }
+  return response.data;
 };
 
 export const loginWithOAuth = async (provider: string, _token: string) => {

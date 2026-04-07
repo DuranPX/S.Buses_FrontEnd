@@ -5,10 +5,10 @@ import githubLogo from "../../../assets/images/github_provider.png";
 
 export const OAuthButtons = () => {
   
-  const handleOAuth = async (provider: string) => {
+  const handleOAuth = (provider: string) => {
     console.log(`Iniciando flujo OAuth con: ${provider}`);
-    // Aquí iría la lógica de redirección al proveedor
-    // loginWithOAuth(provider, "token");
+    const API_URL = import.meta.env.VITE_MS_SECURITY_API;
+    window.location.href = `${API_URL}/oauth2/authorization/${provider}`;
   };
 
   return (
