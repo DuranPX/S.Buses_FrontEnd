@@ -2,7 +2,12 @@ import { NavLink } from "react-router-dom";
 import { useAuthorization } from "../../features/roles/hooks/useAuthorization";
 import { MODULES } from "../config/modules";
 
-export const Sidebar = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { canRead } = useAuthorization();
 
   const GROUPS = [
@@ -47,7 +52,7 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">Buses Manizales</div>
       </div>
@@ -56,6 +61,7 @@ export const Sidebar = () => {
         <NavLink
           to="/dashboard"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          onClick={onClose}
         >
           <span>Dashboard</span>
         </NavLink>
@@ -74,6 +80,7 @@ export const Sidebar = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  onClick={onClose}
                 >
                   <span>{item.label}</span>
                 </NavLink>
