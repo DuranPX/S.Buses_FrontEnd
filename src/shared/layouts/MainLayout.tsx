@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Navbar } from "./Navbar";
@@ -8,19 +9,26 @@ import { Loader } from "../components/ui/Loader";
 
 export const MainLayout = () => {
   const { activeRole, isLoading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (isLoading) return <Loader />;
 
-  // Gate: Asegurar que activeRole esté definido antes de renderizar cualquier contenido protegido
   if (!activeRole) {
     return <RoleSelector />;
   }
 
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="admin-layout">
-      <Sidebar />
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+        onClick={closeSidebar}
+      />
+      <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       <div className="main-content">
-        <Navbar />
+        <Navbar onToggleSidebar={toggleSidebar} />
         <main className="page-container fade-in">
           <Outlet />
         </main>

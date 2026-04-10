@@ -1,11 +1,22 @@
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
-export const Navbar = () => {
+interface NavbarProps {
+  onToggleSidebar: () => void;
+}
+
+export const Navbar = ({ onToggleSidebar }: NavbarProps) => {
   const { user, activeRole, logout } = useAuth();
 
   return (
     <nav className="navbar">
       <div className="navbar-left">
+        <button
+          className="sidebar-toggle"
+          onClick={onToggleSidebar}
+          aria-label="Abrir menú"
+        >
+          ☰
+        </button>
       </div>
       
       <div className="navbar-right">
