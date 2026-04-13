@@ -272,7 +272,7 @@ export const AdminUsers = () => {
           type="text"
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
-          placeholder="🔍  Buscar por nombre o email..."
+          placeholder="Buscar por nombre o email..."
           style={{
             width: '100%',
             maxWidth: '500px',
