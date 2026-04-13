@@ -49,20 +49,26 @@ export const ProfileCompletionGuard = () => {
 
     try {
       setIsSubmitting(true);
+
+      // Validación preventiva: No enviar si el ID es un placeholder
+      if (!user.id || user.id === "user-1") {
+        console.error("ProfileCompletionGuard: Intento de actualización con ID inválido:", user.id);
+        showAlert.error("Error de Sesión", "No se detectó un ID de usuario válido. Por favor, re-inicia sesión.");
+        return;
+      }
+
       const result = await updateUserProfile(user.id, {
         phone: formData.phone,
         address: formData.address
       });
 
       // Actualizar el usuario en el contexto global (reactivo en navbar, sidebar, perfil, etc.)
-      if (result) {
-        updateUser({
-          phone: result.phone || formData.phone,
-          address: result.address || formData.address
-        });
-      } else {
-        updateUser({ phone: formData.phone, address: formData.address });
-      }
+      const updatedData = {
+        phone: result?.phone || formData.phone,
+        address: result?.address || formData.address
+      };
+
+      updateUser(updatedData);
 
       showAlert.success("¡Perfil actualizado!", "Tu información ha sido guardada correctamente.");
     } catch (err) {

@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useState, useMemo, useEffect } from "react"
+import { useNavigate, Link, useLocation, useSearchParams } from "react-router-dom"
 import { login, register } from "../services/auth.service"
 import { InputField } from "../../../shared/components/forms/InputField"
 import { Button } from "../../../shared/components/ui/Button"
@@ -31,6 +31,8 @@ const getPasswordStrength = (password: string): { level: number; label: string; 
 
 export const Login = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const { setAuthFlow } = useAuthFlow()
   const { syncSession } = useAuth()
   const { executeRecaptcha } = useGoogleReCaptcha()
@@ -39,6 +41,32 @@ export const Login = () => {
   const [registerData, setRegisterData] = useState({ name: "", lastName: "", email: "", password: "", confirmPassword: "", phone: "" })
 
   const passwordStrength = useMemo(() => getPasswordStrength(registerData.password), [registerData.password]);
+
+  // Manejar pre-llenado desde CompleteProfile o alertas de expiración
+  useEffect(() => {
+    // 1. Manejar razón de expulsión (Sesión expirada o invalidada por otro login)
+    const reason = searchParams.get('reason');
+    if (reason === 'session_expired') {
+      showAlert.info("Sesión Finalizada", "Tu sesión ha sido invalidada. Esto ocurre si iniciaste sesión en otro dispositivo o si tu sesión expiró.");
+    }
+
+    // 2. Manejar datos de pre-llenado (desde CompleteProfile)
+    const state = location.state as any;
+    if (state) {
+      if (state.isSignUp) {
+        setIsSignUp(true);
+      }
+      if (state.prefillName || state.prefillEmail || state.prefillLastName) {
+        setRegisterData(prev => ({
+          ...prev,
+          name: state.prefillName || prev.name,
+          lastName: state.prefillLastName || prev.lastName,
+          email: state.prefillEmail || prev.email
+        }));
+      }
+    }
+  }, [location.state, searchParams]);
+
 
   const validate = (data: { email: string; password: string }) => {
     if (!emailRegex.test(data.email)) {

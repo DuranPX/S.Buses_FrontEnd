@@ -27,7 +27,14 @@ export const CompleteProfile = () => {
     // Redirigir al login/registro con los datos pre-llenados
     showAlert.info("Completa tu registro", "Te redirigiremos al formulario de registro para completar tu cuenta.")
     setTimeout(() => {
-      navigate("/login", { state: { prefillName: nameParam, prefillEmail: email, fromProvider: provider } })
+      navigate("/login", { 
+        state: { 
+          isSignUp: true,
+          prefillName: nameParam, 
+          prefillEmail: email, 
+          fromProvider: provider 
+        } 
+      })
     }, 1500)
   }
 

@@ -22,7 +22,7 @@ export const setupInterceptors = (api: AxiosInstance) => {
         if (!window.location.pathname.includes("/login")) {
           import("../shared/utils/alerts").then(({ showAlert }) => {
             showAlert.warning("Sesión expirada", "Por favor, inicia sesión de nuevo.");
-            setTimeout(() => window.location.href = "/login", 2000);
+            setTimeout(() => window.location.href = "/login?reason=session_expired", 2000);
           });
         }
       }
