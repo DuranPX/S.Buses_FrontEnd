@@ -1,195 +1,61 @@
-# Sistema de Buses Inteligentes – Frontend
+# Sistema de Gestión Inteligente "Buses Manizales" - Frontend
 
-Frontend del **Sistema de Buses Inteligentes**, una plataforma que permite gestionar la operación de transporte público urbano, incluyendo autenticación de usuarios, gestión de roles, rutas, buses y comunicación entre actores del sistema.
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
 
-Este proyecto forma parte del desarrollo de la materia **Desarrollo Backend** y se integra con una arquitectura basada en **microservicios**.
-
----
-
-# Tecnologías Utilizadas
-
-* **React**
-* **TypeScript**
-* **React Router DOM**
-* **Axios**
-* **JWT (JSON Web Token)**
-* **Vite**
+**Estado del Proyecto:** `90% Completado`
+*(**Nota**: El 10% restante corresponde a la integración pendiente de proveedores OAuth 2.0 como Google, GitHub y Azure, la cual se integrará al backend primero por parte del equipo colaborador).*
 
 ---
 
-# Arquitectura del Sistema
+## Arquitectura y Domain-Driven Design (DDD)
 
-El sistema sigue una arquitectura basada en **microservicios**, donde el frontend se comunica con diferentes servicios del backend.
+Para garantizar que este ecosistema pueda acoger nuevos módulos, crecer de forma mantenible y evitar el "código espagueti", hemos moldeado y organizado toda la capa de React aplicando filosofías de diseño moderno y Domain-Driven Design (DDD).
 
-### Microservicios del Backend
+El núcleo `src` está estructurado bajo **Feature-Sliced Design / Vertical Slicing**:
+- `/features`: Cada bloque del dominio del negocio (Usuarios, Roles, Auth, Dashboard, Vehículos) se encuentra encapsulado con sus propios componentes (`/components`), manejadores de estado (`/context` o `/hooks`), y servicios HTTP independientes.
+- `/shared`: Componentes UI reutilizables puros (botones, modales, formularios), *layouts* y utilidades que no poseen estado de negocio específico.
+- `/api`: Núcleo de la conexión HTTP agnóstica a la vista, estandarizando peticiones.
+- `/router`: Enrutadores dinámicos abstractos que inyectan los requerimientos exigidos por los flujos de la aplicación.
 
-* **Microservicio de Seguridad**
+## Principios S.O.L.I.D y Clean Code
 
-  * Framework: Spring Boot
-  * Base de datos: MongoDB
-  * Función:
+- **Single Responsibility (SRP):** Ejemplificado en herramientas nativas como `useAuthorization.ts`. El Hook solo responde la pregunta de *¿Puede el usuario actual leer este módulo?*, dejando que el componente que lo llama se encargue en su totalidad de manipular la respuesta.
+- **Dependency Inversion (DIP):** Los componentes de presentación jamás ejecutan validaciones directas de contraseñas ni arman peticiones complejas; operan sobre delegaciones hacia repositorios como `auth.service.ts` o abstrayendo al Contexto Global (`AuthContext`).
 
-    * Autenticación
-    * Gestión de usuarios
-    * Gestión de roles y permisos
-    * Generación y validación de JWT
+## Infraestructura de Seguridad End-to-End
 
-* **Microservicio de Negocio**
+El proyecto se sostiene en sus rígidas normativas de seguridad que protegen la información y encriptan los alcances administrativos.
 
-  * Framework: AdonisJS
-  * Base de datos: MySQL
-  * Función:
+### Control de Accesos Basado en Roles (RBAC) y Principio de Menor Privilegio (POLP)
+- **POLP:** En lugar de dar permisos amplios de "Admin" o "Usuario", el token JWT transporta los permisos estrictamente fragmentados (Leer, Escribir, Editar, Eliminar) otorgados para cada módulo en tiempo real. 
+- **Verificación Dinámica:** La aplicación renderiza masivamente el `Sidebar` y los sub-componentes UI descartando por completo aquello de lo que el Payload del usuario no tiene privilegio. El usuario sólo verá y cargará los bytes necesarios.
 
-    * Gestión de buses
-    * Gestión de rutas
-    * Programaciones
-    * Operación del sistema
+### Prevención con Guardianes de Rutas (`Guards`)
+Todo intento forzado de ingreso mediante URLs (Ej: `/admin/roles` o `/verify-code`) debe testearse ante un batallón de Componentes React especializados que interceptan el ciclo del Router:
+1. `PrivateRoute / ProtectedRoute`: Restringen interfaces corporativas si en el ciclo activo no hay credenciales correctas en RAM/Storage, o devuelven al visitante a la barrera `<AccessDenied />`.
+2. `PublicOnlyRoute`: Barrera inversa que previene que los usuarios en sesión pierdan tiempo logueándose doble.
+3. `AuthFlowGuard`: Prevención exhaustiva de brechas lógicas en peticiones como **2FA** y **Reset Password**: Garantizando que solo se accede a las interfaces vitales al demostrar haber seguido la ruta lógica impuesta por AuthFlowContext (Email, reCAPTCHA, Tokens).
 
-* **Microservicio de Notificaciones**
-
-  * Framework: Flask
-  * Función:
-
-    * Envío de correos
-    * Notificaciones del sistema
+### Axios Interceptors
+Programados sobre la instancia global, se encargan silenciósamente de dos proezas maestras:
+- **Attach-Bearer:** Se engrapan automáticamente a los *Headers* la llave de Autorización para legitimar las comunicaciones.
+- **Global Error Handling:** Atrapan errores `401 Unauthorized` de todo contexto para destruir la sesión local, purificar el Front y abortar sin quebrar la experiencia final.
 
 ---
 
-# Estructura del Proyecto
+## Instalación y Despliegue Local
 
-```
-src
-│
-├── components
-│   ├── Button.tsx
-│   ├── InputField.tsx
-│   └── FormCard.tsx
-│
-├── pages
-│   ├── Login.tsx
-│   ├── Register.tsx
-│   ├── Dashboard.tsx
-│   └── AdminRoles.tsx
-│
-├── services
-│   └── api.ts
-│
-├── interceptors
-│   └── axiosInterceptor.ts
-│
-├── App.tsx
-└── main.tsx
-```
-
----
-
-# Funcionalidades Implementadas
-
-### Autenticación
-
-* Registro de usuarios
-* Inicio de sesión
-* Manejo de sesión mediante **JWT**
-* Integración con backend de seguridad
-
-### Rutas del Sistema
-
-* `/login`
-* `/register`
-* `/dashboard`
-* `/admin-roles`
-
-Las rutas son gestionadas mediante **React Router**.
-
----
-
-# Interceptor Axios y JWT
-
-El proyecto utiliza **Axios** para manejar las solicitudes HTTP hacia los microservicios.
-
-Se implementó un **interceptor de Axios** que adjunta automáticamente el **JWT** en el header de cada petición.
-
-### Flujo de autenticación
-
-1. El usuario inicia sesión en el sistema.
-2. El backend (Spring Boot) valida las credenciales.
-3. El backend genera un **JWT**.
-4. El frontend guarda el token en **localStorage**.
-5. El interceptor de Axios adjunta el token automáticamente en cada solicitud.
-
-Ejemplo de header enviado:
-
-```
-Authorization: Bearer <JWT>
-```
-
-Esto permite que los microservicios validen la identidad del usuario en cada petición.
-
----
-
-# Instalación del Proyecto
-
-### 1. Clonar el repositorio
-
-```bash
-git clone <url-del-repositorio>
-```
-
-### 2. Entrar al proyecto
-
-```bash
-cd frontend-buses-inteligentes
-```
-
-### 3. Instalar dependencias
-
-```bash
-npm install
-```
-
-### 4. Ejecutar el proyecto
-
-```bash
-npm run dev
-```
-
-El proyecto se ejecutará en:
-
-```
-http://localhost:5173
-```
-
----
-
-# Antes de empezar cada día — sincronizar con main
-git checkout tu-nombre
-git merge main
-
-# Trabajar y commitear
-git add .
-git commit -m "feat: descripción de lo que hiciste"
-git push origin tu-nombre
-
-# Buenas Prácticas Implementadas
-
-* Uso de **TypeScript** para tipado estático
-* Separación de responsabilidades por carpetas
-* Uso de **componentes reutilizables**
-* Configuración centralizada de **Axios**
-* Uso de **interceptors** para manejo de autenticación
-
----
-
-# Autores
-
-Proyecto desarrollado por el equipo de trabajo para la materia **Desarrollo Backend**.
-
-* Juan David Durán
-* Alejo Ocampo
-* Carlos Lema
-
----
-
-# Licencia
-
-Proyecto académico desarrollado con fines educativos.
+1. Clona el repositorio
+   ```bash
+   git clone https://github.com/DuranPX/S.Buses_FrontEnd.git
+   ```
+2. Instala las dependencias del ecosistema de Node.js
+   ```bash
+   npm install
+   ```
+3. Levanta tu entorno local bajo la integración *Hot-reload* de Vite
+   ```bash
+   npm run dev
+   ```

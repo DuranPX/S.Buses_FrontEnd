@@ -1,0 +1,158 @@
+/* Auth Styles with Background scoping */
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgba(105, 130, 138, 0.918) 0%, rgba(0, 76, 255, 0.952) 100%),
+              url('../assets/images/m_wnb.jpg') no-repeat center/cover;
+}
+
+.auth-container {
+  background-color: #1a1e2e;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+  width: 1000px;
+  max-width: 95%;
+  min-height: 600px;
+}
+
+.auth-form-container {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  transition: all 0.6s ease-in-out;
+  background-color: #1a1e2e;
+  z-index: 2;
+}
+
+.sign-in-container {
+  left: 0;
+  z-index: 2;
+  opacity: 1;
+}
+
+.auth-container.right-panel-active .sign-in-container {
+  transform: translateX(100%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.sign-up-container {
+  left: 0;
+  z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.auth-container.right-panel-active .sign-up-container {
+  transform: translateX(100%);
+  opacity: 1;
+  visibility: visible;
+  z-index: 5;
+  animation: authShow 0.6s;
+}
+
+@keyframes authShow {
+  0%, 49.99% { opacity: 0; z-index: 1; }
+  50%, 100% { opacity: 1; z-index: 5; }
+}
+
+.auth-overlay-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: transform 0.6s ease-in-out;
+  z-index: 100;
+}
+
+.auth-container.right-panel-active .auth-overlay-container {
+  transform: translateX(-100%);
+}
+
+.auth-overlay {
+  background: linear-gradient(135deg, rgba(84, 105, 163, 0.562) 0%, rgba(30, 27, 75, 0.493) 100%),
+              url('../assets/images/modern-city-bus-motion-yellow-public-vehicle-speed-blur-effect.jpg') no-repeat center/cover;
+  color: #ffffff;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+}
+
+.auth-container.right-panel-active .auth-overlay {
+  transform: translateX(50%);
+}
+
+.auth-overlay-panel {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 40px;
+  text-align: center;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+}
+
+.auth-overlay-left { transform: translateX(-20%); }
+.auth-container.right-panel-active .auth-overlay-left { transform: translateX(0); }
+
+.auth-overlay-right { right: 0; transform: translateX(0); }
+.auth-container.right-panel-active .auth-overlay-right { transform: translateX(20%); }
+
+.btn-oauth-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  width: 100%;
+  margin: 1.5rem 0;
+}
+
+.btn-oauth-reactive {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  height: 54px;
+}
+
+.btn-oauth-reactive img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  transition: transform 0.3s ease;
+}
+
+.btn-oauth-reactive:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--primary);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+.btn-oauth-reactive:hover img {
+  transform: scale(1.1);
+}
+
+.btn-oauth-reactive:active {
+  transform: translateY(-1px);
+}
