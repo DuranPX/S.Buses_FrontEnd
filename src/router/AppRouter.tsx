@@ -18,6 +18,8 @@ import ForgotPassword from "../features/auth/pages/ForgotPassword"
 import ResetPassword from "../features/auth/pages/ResetPassword"
 import { AuthFlowGuard } from "../features/auth/components/AuthFlowGuard"
 import AuthSuccess from "../features/auth/pages/AuthSuccess"
+import CompleteProfile from "../features/auth/pages/CompleteProfile"
+import ProfilePage from "../features/profile/pages/ProfilePage"
 
 export default function AppRouter() {
   return (
@@ -26,6 +28,8 @@ export default function AppRouter() {
         <Route path="/" element={<Landing />} />
         
         <Route path="/auth/success" element={<AuthSuccess />} />
+
+        <Route path="/auth/complete-profile" element={<CompleteProfile />} />
 
         <Route path="/login" element={
           <PublicOnlyRoute>
@@ -66,6 +70,12 @@ export default function AppRouter() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/perfil" element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           } />
           

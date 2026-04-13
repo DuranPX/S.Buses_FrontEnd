@@ -6,6 +6,7 @@ import { showAlert } from "../../../shared/utils/alerts"
 import { useAuthFlow } from "../context/AuthFlowContext"
 import { verifyRecoveryCode } from "../services/auth.service"
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3"
+import type { AxiosError } from "axios"
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
 
@@ -19,6 +20,7 @@ export const ResetPassword = () => {
   const codigoUrl = searchParams.get("codigo") || searchParams.get("token") || ""
   
   const [codigo, setCodigo] = useState(codigoUrl)
+  const [attemptsLeft, setAttemptsLeft] = useState(authFlow.attemptsLeft || 3)
   
   const [passwordData, setPasswordData] = useState({
     password: "",
@@ -62,7 +64,16 @@ export const ResetPassword = () => {
       clearAuthFlow()
       setTimeout(() => navigate("/login"), 1500)
     } catch (err) {
-      // El mensaje de error ya es manejado por el servicio de auth
+      // Extraer intentosRestantes del error del backend
+      const axiosErr = err as AxiosError<{ error?: string, intentosRestantes?: number }>;
+      const intentosBackend = axiosErr?.response?.data?.intentosRestantes;
+      
+      if (intentosBackend !== undefined) {
+        setAttemptsLeft(intentosBackend);
+        if (intentosBackend <= 0) {
+          showAlert.error("Intentos agotados", "Has superado el límite de intentos. Solicita un nuevo código de recuperación.")
+        }
+      }
     }
   }
 
@@ -98,6 +109,17 @@ export const ResetPassword = () => {
             />
           </div>
 
+          {attemptsLeft < 3 && (
+            <div style={{ 
+              marginBottom: '1rem', 
+              fontSize: '0.85rem', 
+              color: attemptsLeft <= 1 ? '#ef4444' : '#f59e0b',
+              fontWeight: 600
+            }}>
+              Intentos restantes: {attemptsLeft}
+            </div>
+          )}
+
           <InputField
             label="Nueva Contraseña"
             type="password"
@@ -116,7 +138,7 @@ export const ResetPassword = () => {
             style={{ width: '100%', marginTop: '1rem' }}
           />
 
-          <Button type="submit" label="Actualizar Contraseña" style={{ width: '100%', marginTop: '1.5rem', opacity: (!emailVal || codigo.length < 6) ? 0.5 : 1 }} disabled={!emailVal || codigo.length < 6} />
+          <Button type="submit" label="Actualizar Contraseña" style={{ width: '100%', marginTop: '1.5rem', opacity: (!emailVal || codigo.length < 6 || attemptsLeft <= 0) ? 0.5 : 1 }} disabled={!emailVal || codigo.length < 6 || attemptsLeft <= 0} />
 
           {!emailVal && (
             <div style={{ color: 'var(--error)', marginTop: '1.5rem', fontSize: '0.85rem', textAlign: 'center' }}>

@@ -22,10 +22,18 @@ export const setupInterceptors = (api: AxiosInstance) => {
         if (!window.location.pathname.includes("/login")) {
           import("../shared/utils/alerts").then(({ showAlert }) => {
             showAlert.warning("Sesión expirada", "Por favor, inicia sesión de nuevo.");
-            setTimeout(() => window.location.href = "/login", 2000);
+            setTimeout(() => window.location.href = "/login?reason=session_expired", 2000);
           });
         }
       }
+
+      if (error.response?.status === 403) {
+        import("../shared/utils/alerts").then(({ showAlert }) => {
+          const message = error.response?.data?.error || "No tienes permisos para realizar esta acción.";
+          showAlert.error("Acceso Denegado", message);
+        });
+      }
+
       return Promise.reject(error);
     }
   );

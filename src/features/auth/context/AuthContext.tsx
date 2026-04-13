@@ -19,12 +19,21 @@ export interface Role {
   permisos: Permission[];
 }
 
+export interface AuthExternal {
+  proveedor: string;
+  email: string;
+}
+
 export interface User {
   id: string;
   name: string;
   lastName?: string;
   email: string;
+  phone?: string;
+  address?: string;
+  photo?: string;
   roles: Role[];
+  authExternals?: AuthExternal[];
 }
 
 interface AuthContextType {
@@ -37,6 +46,7 @@ interface AuthContextType {
   logout: () => void;
   setActiveRole: (role: Role) => void;
   setShowRoleModal: (show: boolean) => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,11 +79,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const syncSession = async (token: string, fallbackEmail?: string, explicitRole?: any, explicitUser?: any) => {
     const payload = decodeJWT(token);
+    if (!payload) return;
+
+    // ID Resolution: Prioritize 'user_id' from JWT, then check object/fallback
+    const userId = payload.user_id || payload._id || payload.id || explicitUser?.id || explicitUser?._id || user?.id;
+
+    if (!userId || userId === "user-1") {
+      console.warn("SyncSession: No se pudo resolver un ID de usuario válido desde el token o el estado previo.");
+    }
+
+    const email = explicitUser?.email || payload?.subject || payload?.sub || fallbackEmail || user?.email || "";
+    const name = explicitUser?.name || payload?.name || user?.name || email.split("@")[0];
+    const lastName = explicitUser?.lastName || payload?.lastName || user?.lastName || "";
+    const photo = explicitUser?.photo || payload?.photo || user?.photo || null;
     
-    // El payload del JWT normalmente contiene 'sub' como el email o id de usuario
-    const email = explicitUser?.email || payload?.sub || fallbackEmail || "user@buses.com";
-    const name = explicitUser?.name || payload?.name || email.split("@")[0];
-    const lastName = explicitUser?.lastName || payload?.lastName || "";
+    // IMPORTANTE: No sobreescribir con vacío si el dato ya existe en memoria o en el objeto explícito
+    const phone = explicitUser?.phone || user?.phone || "";
+    const address = explicitUser?.address || user?.address || "";
+    const authExternals = explicitUser?.authExternals || user?.authExternals || [];
     
     const tokenType = payload?.token_type;
 
@@ -84,69 +107,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const draftRoles: Role[] = rawRoles.map((r: string) => ({
         id: `role-${r.toLowerCase()}`,
         name: r,
-        description: `Opción de perfil autodescubierta desde el token general`,
+        description: `Perfil detectado`,
         activo: true,
         permisos: []
       }));
 
-      // Set user but WITHOUT activeRole (forces Route Protection to show Mode Select)
-      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: draftRoles });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: draftRoles, authExternals });
       setActiveRole(null);
 
-      // Flujo de auto-selección bajo la mesa (si solo tiene 1 rol)
       if (rawRoles.length === 1) {
         try {
           const result = await selectRole(rawRoles[0]);
           if (result && result.token && result.role) {
-            // Sincronizar en memoria pura sin tocar storage
-            return await syncSession(result.token, email, result.role);
+            // Pasamos el usuario actual completo a la siguiente fase para no perder datos parciales
+            return await syncSession(result.token, email, result.role, { id: userId, name, lastName, email, phone, address, photo, authExternals });
           }
         } catch (error) {
-          console.error("Auto-selección fallida:", error);
-          // Si falla la auto seleccion lo forzamos visualmente por fallback
           handleSetActiveRole(draftRoles[0]);
         }
       }
 
     } else if (tokenType === "auth_role" || explicitRole) {
-      // 2. TOKEN DEFINITIVO DE PRIVILEGIO MINIMO
-      // El backend no inyecta el objeto gigante en el JWT, se provee en el body del auth/select-role
-      // o se recupera de localstorage (cachedRoleData)
+      // 2. TOKEN DEFINITIVO
       const backendRole = explicitRole;
       
       const roleObj: Role = backendRole ? {
         id: backendRole.id || backendRole._id || `role-${backendRole.nombre?.toLowerCase() || 'default'}`,
-        name: backendRole.nombre || backendRole.name || "ROLE_DESCONOCIDO",
-        description: backendRole.descripcion || backendRole.description || "Perfil de usuario",
+        name: backendRole.nombre || backendRole.name || "ROLE",
+        description: backendRole.descripcion || backendRole.description || "Perfil activo",
         activo: backendRole.activo ?? true,
         permisos: backendRole.permisos || []
       } : {
         id: "role-default",
-        name: "USER",
-        description: "Rol Mínimo de Respaldo",
+        name: "USUARIO",
+        description: "Acceso Básico",
         activo: true,
-        permisos: [
-          { modulo: "dashboard", leer: true, escribir: false, editar: false, eliminar: false }
-        ]
+        permisos: []
       };
 
-      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: [roleObj] });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals });
       handleSetActiveRole(roleObj);
     } else {
-      // BACKWARD COMPATIBILITY
-      // En caso de que se use un JWT antiguo sin token_type
+      // Compatibility fallback
       const rawRoles = payload?.roles || ["USER"];
       const fallbackRole: Role = {
         id: `role-${rawRoles[0].toLowerCase()}`,
         name: rawRoles[0].toUpperCase(),
-        description: `Rol de Compatibilidad: ${rawRoles[0]}`,
+        description: `Acceso`,
         activo: true,
-        permisos: [
-          { modulo: "dashboard", leer: true, escribir: false, editar: false, eliminar: false }
-        ]
+        permisos: []
       };
 
-      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: [fallbackRole] });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [fallbackRole], authExternals });
       handleSetActiveRole(fallbackRole);
     }
   };
@@ -185,11 +197,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = () => {
-    logoutService();
     clearAuthFlow();
     setUser(null);
     setActiveRole(null);
     localStorage.removeItem("activeRole");
+    // El servicio de logout se encarga de llamar al backend y limpiar localStorage
+    logoutService();
+  };
+
+  /** Actualiza parcialmente el usuario en memoria (usado por perfil, desvinculación OAuth, etc.) */
+  const updateUser = (updates: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
   };
 
   const value = {
@@ -201,7 +219,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     syncSession,
     logout,
     setActiveRole: handleSetActiveRole,
-    setShowRoleModal
+    setShowRoleModal,
+    updateUser
   };
 
   return (

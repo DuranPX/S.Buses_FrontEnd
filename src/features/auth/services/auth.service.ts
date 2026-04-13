@@ -13,17 +13,21 @@ export interface RegisterData {
   lastName: string
   email: string
   password: string
+  confirmPassword: string
   phone: string
   address?: string
   recaptchaToken?: string
 }
 
 const handleApiError = (error: unknown, defaultMessage: string) => {
-  const err = error as AxiosError<{ message?: string, errors?: Record<string, string> }>;
+  const err = error as AxiosError<{ message?: string, error?: string, errors?: Record<string, string> }>;
   let message = defaultMessage;
   
   if (err.response?.data) {
-    if (err.response.data.message) {
+    // Nuevo formato: { error: "..." } o { message: "..." }
+    if (err.response.data.error) {
+      message = err.response.data.error;
+    } else if (err.response.data.message) {
       message = err.response.data.message;
     } else if (err.response.data.errors) {
       const firstError = Object.values(err.response.data.errors)[0];
@@ -42,15 +46,17 @@ export const login = async (data: LoginData) => {
     let token = null;
     let message = null;
 
-    if (typeof response.data === 'string') {
+    // Nuevo formato: respuestas son JSON { token, message, error }
+    if (response.data && typeof response.data === 'object') {
+      token = response.data.token;
+      message = response.data.message;
+    } else if (typeof response.data === 'string') {
+      // Backward compatibility por si el backend aún devuelve string en algún caso
       if (response.data.startsWith('eyJ')) {
         token = response.data;
       } else {
         message = response.data;
       }
-    } else if (response.data) {
-      token = response.data.token;
-      message = response.data.message;
     }
     
     if (token) {
@@ -59,15 +65,16 @@ export const login = async (data: LoginData) => {
     }
     
     // Si no hay token, probablemente es la redirección de 2FA
-    return { token: null, message: message || JSON.stringify(response.data) };
+    return { token: null, message: message || "Verificación requerida" };
   } catch (error) {
-    handleApiError(error, "Credenciales inválidas o error de servidor.");
+    handleApiError(error, "Email o contraseña incorrectos.");
   }
 };
 
 export const register = async (data: RegisterData) => {
   try {
     const response = await securityApi.post("/auth/register", data);
+    // Nuevo formato: { message: "Usuario creado..." }
     return response.data;
   } catch (error) {
     handleApiError(error, "No se pudo crear la cuenta. Verifica los datos.");
@@ -88,28 +95,41 @@ export const verify2faCode = async (email: string, codigo: string) => {
     const response = await securityApi.post("/auth/2fa/verify", { email, codigo });
     
     let token = null;
-    if (typeof response.data === 'string') {
+    let message = null;
+
+    // Nuevo formato: { token: "eyJ..." } o { message: "Cuenta activada..." }
+    if (response.data && typeof response.data === 'object') {
+      token = response.data.token;
+      message = response.data.message;
+    } else if (typeof response.data === 'string') {
       if (response.data.startsWith('eyJ')) {
         token = response.data;
       }
-    } else if (response.data) {
-      token = response.data.token;
     }
 
     if (token) {
       localStorage.setItem("token", token);
-      return { token };
+      return { token, message };
     }
     
-    return { token: null, raw: response.data };
+    return { token: null, message, raw: response.data };
   } catch (error) {
+    // Extraer intentosRestantes del error si viene
+    const err = error as AxiosError<{ error?: string, intentosRestantes?: number }>;
+    const intentosRestantes = err.response?.data?.intentosRestantes;
+    
     handleApiError(error, "Código 2FA inválido o expirado.");
+    
+    // Re-throw con datos extra para que el componente pueda leer intentosRestantes
+    // (handleApiError ya hace throw, así que esto es por si se modifica)
+    return { token: null, intentosRestantes };
   }
 }
 
-export const sendRecoveryCode = async (email: string) => {
+export const sendRecoveryCode = async (email: string, recaptchaToken?: string) => {
   try {
-    const response = await securityApi.post("/auth/recovery/send", { email });
+    const response = await securityApi.post("/auth/recovery/send", { email, recaptchaToken });
+    // Respuesta siempre genérica: { message: "Si el email existe..." }
     return response.data;
   } catch (error) {
     handleApiError(error, "Error al solicitar la recuperación.");
@@ -145,15 +165,45 @@ export const getMe = async () => {
   return response.data;
 };
 
-export const loginWithOAuth = async (provider: string, _token: string) => {
-  await new Promise(resolve => setTimeout(resolve, 800));
-  const jwt = "mock-oauth-token-" + Math.random().toString(36).substring(7);
-  localStorage.setItem("token", jwt);
-  showAlert.success("OAuth Exitoso", `Conectado correctamente con ${provider}`);
-  return { token: jwt };
+export const logout = async () => {
+  try {
+    // Notificar al backend (para logging/auditoría)
+    await securityApi.post("/auth/logout");
+  } catch (e) {
+    // No bloquear el logout si falla la petición
+    console.warn('Error en logout del servidor:', e);
+  } finally {
+    // SIEMPRE limpiar el estado local
+    localStorage.removeItem("token");
+    localStorage.removeItem("activeRole");
+    window.location.href = "/";
+  }
 };
 
-export const logout = () => {
-  localStorage.removeItem("token");
-  window.location.href = "/";
+export const searchUsers = async (query: string) => {
+  try {
+    const response = await securityApi.get(`/api/users/search?q=${encodeURIComponent(query)}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Error al buscar usuarios.");
+  }
 };
+
+export const unlinkAuthExternal = async (userId: string, provider: string) => {
+  try {
+    const response = await securityApi.delete(`/api/users/${userId}/auth-external/${provider}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "No se pudo desvincular la cuenta externa.");
+  }
+};
+
+export const updateUserProfile = async (userId: string, data: { phone?: string; address?: string; name?: string; lastName?: string }) => {
+  try {
+    const response = await securityApi.put(`/api/users/${userId}`, data);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "No se pudo actualizar el perfil.");
+  }
+};
+

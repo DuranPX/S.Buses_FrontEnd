@@ -37,7 +37,7 @@ export const RoleSelector = () => {
       minHeight: '100vh',
       background: 'var(--bg-color, #0f172a)'
     }}>
-      <Navbar />
+      <Navbar onToggleSidebar={() => {}} />
       
       <main style={{
         flex: 1,

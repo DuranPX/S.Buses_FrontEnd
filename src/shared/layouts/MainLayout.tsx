@@ -5,6 +5,7 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { RoleSelector } from "../../features/auth/components/RoleSelector";
+import { ProfileCompletionGuard } from "../../features/auth/components/ProfileCompletionGuard";
 import { Loader } from "../components/ui/Loader";
 
 export const MainLayout = () => {
@@ -21,20 +22,25 @@ export const MainLayout = () => {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="admin-layout">
-      <div
-        className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
-        onClick={closeSidebar}
-      />
-      <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-      <div className="main-content">
-        <Navbar onToggleSidebar={toggleSidebar} />
-        <main className="page-container fade-in">
-          <Outlet />
-        </main>
-        <Footer />
+    <>
+      {/* Modal overlay: completar perfil OAuth si phone/address vacíos */}
+      <ProfileCompletionGuard />
+
+      <div className="admin-layout">
+        <div
+          className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+          onClick={closeSidebar}
+        />
+        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
+        <div className="main-content">
+          <Navbar onToggleSidebar={toggleSidebar} />
+          <main className="page-container fade-in">
+            <Outlet />
+          </main>
+          <Footer />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
