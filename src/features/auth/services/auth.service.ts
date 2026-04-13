@@ -207,3 +207,23 @@ export const updateUserProfile = async (userId: string, data: { phone?: string; 
   }
 };
 
+// Consulta si el usuario tiene contraseña propia
+export const checkHasPassword = async (userId: string): Promise<boolean> => {
+  try {
+    const response = await securityApi.get(`/api/users/${userId}/has-password`);
+    return response.data.hasPassword;
+  } catch (error) {
+    handleApiError(error, "No se pudo verificar el estado de la contraseña.");
+    return false;
+  }
+};
+
+// Crea la contraseña para un usuario OAuth2
+export const setPassword = async (userId: string, password: string) => {
+  try {
+    const response = await securityApi.post(`/api/users/${userId}/set-password`, { password });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "No se pudo crear la contraseña.");
+  }
+};

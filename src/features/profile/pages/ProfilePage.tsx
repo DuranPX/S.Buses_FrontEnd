@@ -3,10 +3,12 @@ import { useAuth } from "../../auth/hooks/useAuth";
 import { FormCard } from "../../../shared/components/cards/FormCard";
 import { Button } from "../../../shared/components/ui/Button";
 import { showAlert } from "../../../shared/utils/alerts";
-import { unlinkAuthExternal, getMe } from "../../auth/services/auth.service";
+import { unlinkAuthExternal, getMe, checkHasPassword, setPassword } from "../../auth/services/auth.service";
+
 import googleLogo from "../../../assets/images/google_provider.png";
 import azureLogo from "../../../assets/images/azure provider.png";
 import githubLogo from "../../../assets/images/github_provider.png";
+import InputField from "../../../shared/components/forms/InputField";
 
 const providerLogos: Record<string, string> = {
   google: googleLogo,
@@ -20,58 +22,178 @@ const providerNames: Record<string, string> = {
   github: "GitHub",
 };
 
+const validatePassword = (password: string): string | null => {
+  if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres";
+  if (!/[A-Z]/.test(password)) return "Debe tener al menos una mayúscula";
+  if (!/[a-z]/.test(password)) return "Debe tener al menos una minúscula";
+  if (!/\d/.test(password)) return "Debe tener al menos un número";
+  if (!/[@$!%*?&]/.test(password)) return "Debe tener al menos un carácter especial (@$!%*?&)";
+  return null;
+};
+
 export const ProfilePage = () => {
   const { user, activeRole, updateUser } = useAuth();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
 
   if (!user) return null;
 
-  const handleUnlink = async (provider: string) => {
-    const confirmation = await showAlert.warning(
-      "¿Desvincular cuenta?",
-      `¿Seguro que deseas desvincular tu cuenta de ${providerNames[provider] || provider}? Perderás la posibilidad de iniciar sesión con ese proveedor.`
-    );
-
-    if (!confirmation.isConfirmed) return;
-
+  const executeUnlink = async (provider: string) => {
     try {
       setUnlinkingProvider(provider);
       const result = await unlinkAuthExternal(user.id, provider);
-      
       if (result?.user) {
-        // Actualizar el usuario en el contexto global (reactivo en navbar, sidebar, etc.)
-        updateUser({
-          ...result.user,
-          authExternals: result.user.authExternals || []
-        });
+        updateUser({ ...result.user, authExternals: result.user.authExternals || [] });
       } else {
-        // Refetch desde el backend para sincronizar
         try {
           const sessionData = await getMe();
-          if (sessionData?.user) {
-            updateUser(sessionData.user);
-          }
-        } catch (e) {
-          // Fallback local: remover el proveedor del estado
+          if (sessionData?.user) updateUser(sessionData.user);
+        } catch {
           updateUser({
             authExternals: (user.authExternals || []).filter(a => a.proveedor !== provider)
           });
         }
       }
-      
       showAlert.success("Desvinculado", result?.message || `Cuenta de ${providerNames[provider] || provider} desvinculada exitosamente.`);
-    } catch (err) {
-      // El error ya es manejado por el servicio (showAlert.error)
+    } catch {
+      // El error ya es manejado por el servicio
     } finally {
       setUnlinkingProvider(null);
     }
   };
 
+  const handleUnlink = async (provider: string) => {
+    const isOnlyProvider = linkedProviders.length === 1;
+    if (isOnlyProvider) {
+      const hasPassword = await checkHasPassword(user.id);
+      if (!hasPassword) {
+        setPendingProvider(provider);
+        setShowPasswordModal(true);
+        return;
+      }
+    }
+    const confirmation = await showAlert.warning(
+      "¿Desvincular cuenta?",
+      `¿Seguro que deseas desvincular tu cuenta de ${providerNames[provider] || provider}?`
+    );
+    if (!confirmation.isConfirmed) return;
+    await executeUnlink(provider);
+  };
+
+  const handleSetPasswordAndUnlink = async () => {
+    const error = validatePassword(newPassword);
+    if (error) { setPasswordError(error); return; }
+    if (newPassword !== confirmPassword) { setPasswordError("Las contraseñas no coinciden"); return; }
+    setPasswordError(null);
+    setIsSettingPassword(true);
+    try {
+      await setPassword(user.id, newPassword);
+      setShowPasswordModal(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      if (pendingProvider) {
+        await executeUnlink(pendingProvider);
+        setPendingProvider(null);
+      }
+    } catch {
+      setPasswordError("Ocurrió un error al crear la contraseña. Intenta de nuevo.");
+    } finally {
+      setIsSettingPassword(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowPasswordModal(false);
+    setPendingProvider(null);
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError(null);
+  };
+
   const linkedProviders = user.authExternals || [];
+
+  const passwordModal = showPasswordModal && (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.7)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <form
+        className="glass"
+        onSubmit={(e) => { e.preventDefault(); handleSetPasswordAndUnlink(); }}
+        style={{
+          padding: '2.5rem', maxWidth: '420px', width: '90%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          borderRadius: '16px'
+        }}
+      >
+        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔐</div>
+        <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.3rem' }}>Crea una contraseña primero</h2>
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.85rem', marginBottom: '2rem' }}>
+          Esta es tu única forma de acceso. Antes de desvincular{' '}
+          <strong style={{ color: 'white' }}>{providerNames[pendingProvider || ''] || pendingProvider}</strong>,
+          necesitas crear una contraseña para no perder el acceso.
+        </p>
+        <InputField
+          label="Nueva contraseña"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Mínimo 8 caracteres"
+          required
+          style={{ width: '100%' }}
+        />
+        <InputField
+          label="Confirmar contraseña"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Repite la contraseña"
+          required
+          style={{ width: '100%', marginTop: '1rem' }}
+        />
+        {passwordError && (
+          <div style={{
+            width: '100%', marginTop: '0.75rem', color: '#ef4444',
+            fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)',
+            padding: '0.5rem 0.75rem', borderRadius: '8px'
+          }}>
+            ⚠️ {passwordError}
+          </div>
+        )}
+        <ul style={{ width: '100%', fontSize: '0.75rem', color: 'var(--text-muted)', margin: '1rem 0 0 0', paddingLeft: '1.2rem' }}>
+          <li>Mínimo 8 caracteres</li>
+          <li>Al menos una mayúscula y una minúscula</li>
+          <li>Al menos un número</li>
+          <li>Al menos un carácter especial (@$!%*?&)</li>
+        </ul>
+        <Button
+          type="submit"
+          label={isSettingPassword ? "Guardando..." : "Crear contraseña y desvincular"}
+          disabled={isSettingPassword || !newPassword || !confirmPassword}
+          style={{ width: '100%', marginTop: '1.5rem' }}
+        />
+        <button
+          type="button"
+          onClick={handleCloseModal}
+          disabled={isSettingPassword}
+          style={{ marginTop: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}
+        >
+          Cancelar
+        </button>
+      </form>
+    </div>
+  );
 
 
   return (
     <div className="profile-page" style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+      {passwordModal}
       <h1 style={{ marginBottom: '0.5rem' }}>Perfil</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Gestiona tu información personal y cuentas vinculadas.</p>
 
