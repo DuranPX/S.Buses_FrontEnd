@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FormCard } from "../../../shared/components/cards/FormCard";
 import { Button } from "../../../shared/components/ui/Button";
 import { showAlert } from "../../../shared/utils/alerts";
@@ -6,6 +6,7 @@ import { useAuthorization } from "../../roles/hooks/useAuthorization";
 import { AccessDenied } from "../../../shared/components/feedback/AccessDenied";
 import { MODULES } from "../../../shared/config/modules";
 import { securityApi } from "../../../api/api";
+import { searchUsers } from "../../auth/services/auth.service";
 import type { Role } from "../../auth/context/AuthContext";
 
 interface UserProfile {
@@ -15,15 +16,20 @@ interface UserProfile {
   email: string;
   phone: string;
   address?: string;
+  photo?: string;
   roles: Role[];
+  authExternals?: { proveedor: string; email: string }[];
 }
 
 export const AdminUsers = () => {
   const { can, activeRole } = useAuthorization();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [systemRoles, setSystemRoles] = useState<Role[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
 
   if (!activeRole) return null;
@@ -44,7 +50,8 @@ export const AdminUsers = () => {
       const normalizedUsers = usrRes.data.map((u: any) => ({
         ...u,
         id: u.id || u._id,
-        roles: u.roles || []
+        roles: u.roles || [],
+        authExternals: u.authExternals || []
       }));
 
       const normalizedRoles = rlsRes.data.map((r: any) => ({
@@ -54,12 +61,47 @@ export const AdminUsers = () => {
       }));
 
       setUsers(normalizedUsers);
+      setAllUsers(normalizedUsers);
       setSystemRoles(normalizedRoles);
     } catch (error) {
       console.error(error);
       showAlert.error("Error", "Ocurrió un error cargando los datos del sistema.");
     }
   };
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    if (!query.trim()) {
+      setUsers(allUsers);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        const results = await searchUsers(query);
+        if (results) {
+          const normalized = results.map((u: any) => ({
+            ...u,
+            id: u.id || u._id,
+            roles: u.roles || [],
+            authExternals: u.authExternals || []
+          }));
+          setUsers(normalized);
+        }
+      } catch (error) {
+        // Fallback: filtrar localmente si el endpoint falla
+        const filtered = allUsers.filter(u =>
+          `${u.name} ${u.lastName} ${u.email}`.toLowerCase().includes(query.toLowerCase())
+        );
+        setUsers(filtered);
+      }
+    }, 400); // debounce 400ms
+
+    setSearchTimeout(timeout);
+  }, [allUsers, searchTimeout]);
 
   const openForm = (user: UserProfile | null = null) => {
     if (user && !can(MODULES.USUARIOS, 'editar')) return;
@@ -87,7 +129,9 @@ export const AdminUsers = () => {
       if (result.isConfirmed) {
         try {
           await securityApi.delete(`/api/users/${user.id}`);
-          setUsers(users.filter(u => u.id !== user.id));
+          const updated = users.filter(u => u.id !== user.id);
+          setUsers(updated);
+          setAllUsers(prev => prev.filter(u => u.id !== user.id));
           showAlert.success("Eliminado", "Usuario removido de la plataforma.");
         } catch (error) {
           showAlert.error("Error", "No se pudo eliminar el usuario.");
@@ -130,6 +174,7 @@ export const AdminUsers = () => {
 
     if (!selectedUser.id.startsWith('tmp-')) {
       setUsers(users.map(u => u.id === selectedUser.id ? { ...u, roles: newRoles } : u));
+      setAllUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, roles: newRoles } : u));
     }
   };
 
@@ -221,6 +266,30 @@ export const AdminUsers = () => {
         )}
       </div>
 
+      {/* Barra de búsqueda */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="🔍  Buscar por nombre o email..."
+          style={{
+            width: '100%',
+            maxWidth: '500px',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-md)',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'white',
+            fontSize: '0.9rem',
+            outline: 'none',
+            transition: 'border-color 0.2s ease'
+          }}
+          onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-color, #3b82f6)'}
+          onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+        />
+      </div>
+
       <div className="users-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
         {users.map((u) => (
           <FormCard key={u.id} title={`${u.name} ${u.lastName}`}>
@@ -261,7 +330,9 @@ export const AdminUsers = () => {
           </FormCard>
         ))}
         {users.length === 0 && (
-           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No hay usuarios reflejados en la plataforma.</p>
+           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+             {searchQuery ? `No se encontraron usuarios para "${searchQuery}".` : "No hay usuarios reflejados en la plataforma."}
+           </p>
         )}
       </div>
     </div>

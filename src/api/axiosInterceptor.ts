@@ -26,6 +26,14 @@ export const setupInterceptors = (api: AxiosInstance) => {
           });
         }
       }
+
+      if (error.response?.status === 403) {
+        import("../shared/utils/alerts").then(({ showAlert }) => {
+          const message = error.response?.data?.error || "No tienes permisos para realizar esta acción.";
+          showAlert.error("Acceso Denegado", message);
+        });
+      }
+
       return Promise.reject(error);
     }
   );

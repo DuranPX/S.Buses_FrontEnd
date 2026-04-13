@@ -66,6 +66,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <span>Dashboard</span>
         </NavLink>
 
+        <NavLink
+          to="/perfil"
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          onClick={onClose}
+        >
+          <span>Perfil</span>
+        </NavLink>
+
         {GROUPS.map((group, groupIdx) => {
           const visibleItems = group.items.filter(item => canRead(item.module));
           if (visibleItems.length === 0) return null;

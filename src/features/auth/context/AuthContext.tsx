@@ -19,12 +19,21 @@ export interface Role {
   permisos: Permission[];
 }
 
+export interface AuthExternal {
+  proveedor: string;
+  email: string;
+}
+
 export interface User {
   id: string;
   name: string;
   lastName?: string;
   email: string;
+  phone?: string;
+  address?: string;
+  photo?: string;
   roles: Role[];
+  authExternals?: AuthExternal[];
 }
 
 interface AuthContextType {
@@ -37,6 +46,7 @@ interface AuthContextType {
   logout: () => void;
   setActiveRole: (role: Role) => void;
   setShowRoleModal: (show: boolean) => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,6 +84,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const email = explicitUser?.email || payload?.sub || fallbackEmail || "user@buses.com";
     const name = explicitUser?.name || payload?.name || email.split("@")[0];
     const lastName = explicitUser?.lastName || payload?.lastName || "";
+    const photo = explicitUser?.photo || payload?.photo || null;
+    const phone = explicitUser?.phone || "";
+    const address = explicitUser?.address || "";
+    const authExternals = explicitUser?.authExternals || [];
     
     const tokenType = payload?.token_type;
 
@@ -90,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }));
 
       // Set user but WITHOUT activeRole (forces Route Protection to show Mode Select)
-      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: draftRoles });
+      setUser({ id: payload?.id || "user-1", name, lastName, email, phone, address, photo, roles: draftRoles, authExternals });
       setActiveRole(null);
 
       // Flujo de auto-selección bajo la mesa (si solo tiene 1 rol)
@@ -130,7 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ]
       };
 
-      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: [roleObj] });
+      setUser({ id: payload?.id || explicitUser?.id || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals });
       handleSetActiveRole(roleObj);
     } else {
       // BACKWARD COMPATIBILITY
@@ -146,7 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ]
       };
 
-      setUser({ id: payload?.id || "user-1", name, lastName, email, roles: [fallbackRole] });
+      setUser({ id: payload?.id || "user-1", name, lastName, email, phone, address, photo, roles: [fallbackRole], authExternals });
       handleSetActiveRole(fallbackRole);
     }
   };
@@ -185,11 +199,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = () => {
-    logoutService();
     clearAuthFlow();
     setUser(null);
     setActiveRole(null);
     localStorage.removeItem("activeRole");
+    // El servicio de logout se encarga de llamar al backend y limpiar localStorage
+    logoutService();
+  };
+
+  /** Actualiza parcialmente el usuario en memoria (usado por perfil, desvinculación OAuth, etc.) */
+  const updateUser = (updates: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
   };
 
   const value = {
@@ -201,7 +221,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     syncSession,
     logout,
     setActiveRole: handleSetActiveRole,
-    setShowRoleModal
+    setShowRoleModal,
+    updateUser
   };
 
   return (

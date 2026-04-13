@@ -1,18 +1,22 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuthFlow } from "../context/AuthFlowContext"
 import { useAuth } from "../hooks/useAuth"
 import { Button } from "../../../shared/components/ui/Button"
 import { showAlert } from "../../../shared/utils/alerts"
 import { verify2faCode, send2faCode } from "../services/auth.service"
+import { maskEmail } from "../../../shared/utils/maskEmail"
+import type { AxiosError } from "axios"
 
 export const VerifyCode = () => {
   const navigate = useNavigate()
-  const { authFlow, setAuthFlow, clearAuthFlow, decrementAttempts } = useAuthFlow()
+  const { authFlow, setAuthFlow, clearAuthFlow } = useAuthFlow()
   const { syncSession } = useAuth()
   const [code, setCode] = useState("")
   const [timeLeft, setTimeLeft] = useState(0)
   const [isExpired, setIsExpired] = useState(false)
+
+  const maskedEmail = useMemo(() => maskEmail(authFlow.email), [authFlow.email]);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -26,6 +30,15 @@ export const VerifyCode = () => {
 
     return () => clearInterval(timer)
   }, [authFlow.expiresAt])
+
+  // Invalidar sesión parcial al cerrar ventana durante 2FA
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      clearAuthFlow();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [clearAuthFlow])
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,10 +71,23 @@ export const VerifyCode = () => {
         throw new Error("Token no recibido del servidor.")
       }
     } catch (error) {
-      decrementAttempts()
-      const newAttempts = authFlow.attemptsLeft - 1
-      if (newAttempts <= 0) {
-        showAlert.error("Intentos agotados", "Sin intentos restantes. Debes reenviar el código.")
+      // Extraer intentosRestantes del error del backend
+      const err = error as AxiosError<{ error?: string, intentosRestantes?: number }>;
+      const intentosBackend = err?.response?.data?.intentosRestantes;
+      
+      if (intentosBackend !== undefined) {
+        // Usar los intentos del backend como fuente de verdad
+        setAuthFlow({ ...authFlow, attemptsLeft: intentosBackend });
+        if (intentosBackend <= 0) {
+          showAlert.error("Intentos agotados", "Sin intentos restantes. Debes reenviar el código.")
+        }
+      } else {
+        // Fallback: decrementar localmente
+        const newAttempts = authFlow.attemptsLeft - 1;
+        setAuthFlow({ ...authFlow, attemptsLeft: newAttempts });
+        if (newAttempts <= 0) {
+          showAlert.error("Intentos agotados", "Sin intentos restantes. Debes reenviar el código.")
+        }
       }
     }
   }
@@ -87,7 +113,7 @@ export const VerifyCode = () => {
         <form onSubmit={handleVerify} className="glass" style={{ padding: '3rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <h1>Verificar Código</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Ingresa el código de 6 dígitos enviado a <strong>{authFlow.email}</strong>
+            Ingresa el código de 6 dígitos enviado a <strong>{maskedEmail}</strong>
           </p>
 
           <div style={{ width: '100%', marginBottom: '1.5rem' }}>
@@ -112,8 +138,12 @@ export const VerifyCode = () => {
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem', color: isExpired ? 'var(--error)' : 'var(--text-muted)' }}>
+          <div style={{ marginBottom: '1rem', color: isExpired ? 'var(--error)' : 'var(--text-muted)' }}>
             {isExpired ? "El código ha expirado" : `El código expira en: ${timeLeft}s`}
+          </div>
+
+          <div style={{ marginBottom: '1.5rem', fontSize: '0.85rem', color: authFlow.attemptsLeft <= 1 ? '#ef4444' : 'var(--text-muted)' }}>
+            Intentos restantes: {authFlow.attemptsLeft}
           </div>
 
           <Button 
@@ -135,7 +165,7 @@ export const VerifyCode = () => {
               fontSize: '0.9rem'
             }}
           >
-            Reenviar código
+            ¿No recibió el código? Revisar spam o reenviar
           </button>
 
           <button
