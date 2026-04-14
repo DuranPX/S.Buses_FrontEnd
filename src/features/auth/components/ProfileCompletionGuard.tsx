@@ -3,7 +3,6 @@ import { useAuth } from "../hooks/useAuth";
 import { updateUserProfile } from "../services/auth.service";
 import { showAlert } from "../../../shared/utils/alerts";
 import { InputField } from "../../../shared/components/forms/InputField";
-import { Button } from "../../../shared/components/ui/Button";
 
 const phoneRegex = /^[+]?[0-9]{7,15}$/;
 
@@ -27,24 +26,37 @@ export const ProfileCompletionGuard = () => {
   // Si no hay user, no mostrar nada
   if (!user) return null;
 
-  // Un usuario OAuth-only se detecta si tiene authExternals Y su phone/address están vacíos
+  // Un usuario OAuth-only se detecta si tiene authExternals
   const isOAuthUser = (user.authExternals?.length ?? 0) > 0;
-  const needsCompletion = isOAuthUser && (!user.phone || !user.address);
+  
+  // Determinar qué campos faltan
+  const missingPhone = !user.phone || user.phone.trim() === "";
+  const missingAddress = !user.address || user.address.trim() === "";
+  
+  const needsCompletion = isOAuthUser && (missingPhone || missingAddress);
 
   // Si ya completó su perfil, o decidió omitir → no mostrar nada
   if (!needsCompletion || skipped) return null;
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const payload: { phone?: string; address?: string } = {};
 
-    if (!phoneRegex.test(formData.phone)) {
-      showAlert.warning("Teléfono inválido", "El teléfono debe tener entre 7 y 15 dígitos numéricos.");
-      return;
+    if (missingPhone) {
+      if (!phoneRegex.test(formData.phone)) {
+        showAlert.warning("Teléfono inválido", "El teléfono debe tener entre 7 y 15 dígitos numéricos.");
+        return;
+      }
+      payload.phone = formData.phone;
     }
 
-    if (formData.address.trim().length < 3) {
-      showAlert.warning("Dirección inválida", "Por favor ingresa una dirección válida.");
-      return;
+    if (missingAddress) {
+      if (formData.address.trim().length < 3) {
+        showAlert.warning("Dirección inválida", "Por favor ingresa una dirección válida.");
+        return;
+      }
+      payload.address = formData.address;
     }
 
     try {
@@ -57,15 +69,12 @@ export const ProfileCompletionGuard = () => {
         return;
       }
 
-      const result = await updateUserProfile(user.id, {
-        phone: formData.phone,
-        address: formData.address
-      });
+      const result = await updateUserProfile(user.id, payload);
 
       // Actualizar el usuario en el contexto global (reactivo en navbar, sidebar, perfil, etc.)
       const updatedData = {
-        phone: result?.phone || formData.phone,
-        address: result?.address || formData.address
+        ...(payload.phone ? { phone: result?.phone || formData.phone } : {}),
+        ...(payload.address ? { address: result?.address || formData.address } : {})
       };
 
       updateUser(updatedData);
@@ -126,36 +135,53 @@ export const ProfileCompletionGuard = () => {
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5' }}>
             Tu cuenta fue creada con <strong style={{ color: 'white' }}>{providerName}</strong>. 
-            Para completar tu registro, necesitamos algunos datos adicionales.
+            Para completar tu registro, necesitamos {missingPhone && missingAddress ? "algunos datos adicionales" : "un dato adicional"}.
           </p>
         </div>
 
         {/* Formulario */}
         <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <InputField
-            label="Número de Teléfono"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            placeholder="+573001234567"
-            required
-          />
+          {missingPhone && (
+            <InputField
+              label="Número de Teléfono"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="+573001234567"
+              required
+            />
+          )}
 
-          <InputField
-            label="Dirección"
-            type="text"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            placeholder="Calle 123 #45-67, Manizales"
-            required
-          />
+          {missingAddress && (
+            <InputField
+              label="Dirección"
+              type="text"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Calle 123 #45-67, Manizales"
+              required
+            />
+          )}
 
-          <Button
+          <button
             type="submit"
-            label={isSubmitting ? "Guardando..." : "Completar Perfil"}
             disabled={isSubmitting}
-            style={{ width: '100%', marginTop: '0.5rem' }}
-          />
+            className="btn-primary" // Asumiendo que existe o usando el componente Button si se prefiere
+            style={{ 
+              width: '100%', 
+              marginTop: '0.5rem',
+              padding: '0.8rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: 'var(--primary-color, #007bff)',
+              color: 'white',
+              fontWeight: 600,
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              opacity: isSubmitting ? 0.7 : 1
+            }}
+          >
+            {isSubmitting ? "Guardando..." : "Completar Perfil"}
+          </button>
 
           <button
             type="button"
