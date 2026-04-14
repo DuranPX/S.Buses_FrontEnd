@@ -22,6 +22,8 @@ export const ResetPassword = () => {
   const [codigo, setCodigo] = useState(codigoUrl)
   const [attemptsLeft, setAttemptsLeft] = useState(authFlow.attemptsLeft || 3)
   
+  const [recaptchaFailed, setRecaptchaFailed] = useState(false)
+  
   const [passwordData, setPasswordData] = useState({
     password: "",
     confirmPassword: ""
@@ -53,6 +55,7 @@ export const ResetPassword = () => {
     const recaptchaToken = await executeRecaptcha("recovery")
 
     try {
+      setRecaptchaFailed(false)
       await verifyRecoveryCode({
         email: emailVal,
         codigo,
@@ -64,12 +67,18 @@ export const ResetPassword = () => {
       clearAuthFlow()
       setTimeout(() => navigate("/login"), 1500)
     } catch (err) {
-      // Extraer intentosRestantes del error del backend
-      const axiosErr = err as AxiosError<{ error?: string, intentosRestantes?: number }>;
-      const intentosBackend = axiosErr?.response?.data?.intentosRestantes;
-      
+      const axiosErr = err as AxiosError<{ error?: string, intentosRestantes?: number, status?: number }>
+      const status = axiosErr?.response?.status
+      const intentosBackend = axiosErr?.response?.data?.intentosRestantes
+
+      // reCAPTCHA rechazado por el backend
+      if (status === 403) {
+        setRecaptchaFailed(true)
+        return
+      }
+
       if (intentosBackend !== undefined) {
-        setAttemptsLeft(intentosBackend);
+        setAttemptsLeft(intentosBackend)
         if (intentosBackend <= 0) {
           showAlert.error("Intentos agotados", "Has superado el límite de intentos. Solicita un nuevo código de recuperación.")
         }
@@ -137,6 +146,42 @@ export const ResetPassword = () => {
             required
             style={{ width: '100%', marginTop: '1rem' }}
           />
+
+          {recaptchaFailed && (
+            <div style={{
+              width: '100%',
+              marginBottom: '1rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              color: '#ef4444',
+              fontSize: '0.85rem',
+              textAlign: 'center'
+            }}>
+              Verificación de seguridad fallida. Por favor intenta de nuevo.
+              <br />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!executeRecaptcha) return
+                  setRecaptchaFailed(false)
+                  await executeRecaptcha("recovery")
+                }}
+                style={{
+                  marginTop: '0.5rem',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  textDecoration: 'underline'
+                }}
+              >
+                Reintentar verificación
+              </button>
+            </div>
+          )}
 
           <Button type="submit" label="Actualizar Contraseña" style={{ width: '100%', marginTop: '1.5rem', opacity: (!emailVal || codigo.length < 6 || attemptsLeft <= 0) ? 0.5 : 1 }} disabled={!emailVal || codigo.length < 6 || attemptsLeft <= 0} />
 

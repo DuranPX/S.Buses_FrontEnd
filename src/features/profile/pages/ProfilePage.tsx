@@ -183,7 +183,7 @@ export const ProfilePage = () => {
             fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)',
             padding: '0.5rem 0.75rem', borderRadius: '8px'
           }}>
-            ⚠️ {passwordError}
+            {passwordError}
           </div>
         )}
         <ul style={{ width: '100%', fontSize: '0.75rem', color: 'var(--text-muted)', margin: '1rem 0 0 0', paddingLeft: '1.2rem' }}>
