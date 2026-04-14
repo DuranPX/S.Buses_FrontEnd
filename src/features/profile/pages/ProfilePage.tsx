@@ -10,6 +10,8 @@ import azureLogo from "../../../assets/images/azure provider.png";
 import githubLogo from "../../../assets/images/github_provider.png";
 import InputField from "../../../shared/components/forms/InputField";
 
+import { changePassword } from "../../auth/services/auth.service";
+
 const providerLogos: Record<string, string> = {
   google: googleLogo,
   microsoft: azureLogo,
@@ -40,6 +42,13 @@ export const ProfilePage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
 
   if (!user) return null;
 
@@ -64,6 +73,18 @@ export const ProfilePage = () => {
       // El error ya es manejado por el servicio
     } finally {
       setUnlinkingProvider(null);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      setChangingPassword(true);
+      await changePassword(user.id, passwordForm);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      // El error ya lo maneja el servicio
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -132,7 +153,6 @@ export const ProfilePage = () => {
           borderRadius: '16px'
         }}
       >
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔐</div>
         <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.3rem' }}>Crea una contraseña primero</h2>
         <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.85rem', marginBottom: '2rem' }}>
           Esta es tu única forma de acceso. Antes de desvincular{' '}
@@ -394,8 +414,59 @@ export const ProfilePage = () => {
                 ))}
               </div>
             </div>
+
+            {/* Toggle Button for Password Change */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+              <Button 
+                label={showChangePassword ? "Cancelar cambio" : "Cambiar contraseña"}
+                onClick={() => setShowChangePassword(!showChangePassword)}
+                style={{ alignSelf: 'flex-start', backgroundColor: showChangePassword ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)' }}
+              />
+
+              {showChangePassword && (
+                <div style={{
+                  padding: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: '1rem' }}>Cambiar Contraseña</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {["currentPassword", "newPassword", "confirmPassword"].map((field) => (
+                      <input
+                        key={field}
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder={
+                          field === "currentPassword" ? "Contraseña actual"
+                          : field === "newPassword" ? "Nueva contraseña"
+                          : "Confirmar nueva contraseña"
+                        }
+                        value={passwordForm[field as keyof typeof passwordForm]}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, [field]: e.target.value }))}
+                        style={{
+                          padding: '0.6rem 1rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'rgba(255,255,255,0.05)',
+                          color: 'inherit',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    ))}
+                    <Button
+                      label={changingPassword ? "Actualizando..." : "Actualizar contraseña"}
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      style={{ alignSelf: 'flex-end', marginTop: '0.5rem' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </FormCard>
+
       </div>
     </div>
   );

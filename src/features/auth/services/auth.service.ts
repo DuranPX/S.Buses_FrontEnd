@@ -24,7 +24,6 @@ const handleApiError = (error: unknown, defaultMessage: string) => {
   let message = defaultMessage;
   
   if (err.response?.data) {
-    // Nuevo formato: { error: "..." } o { message: "..." }
     if (err.response.data.error) {
       message = err.response.data.error;
     } else if (err.response.data.message) {
@@ -225,5 +224,19 @@ export const setPassword = async (userId: string, password: string) => {
     return response.data;
   } catch (error) {
     handleApiError(error, "No se pudo crear la contraseña.");
+  }
+};
+
+export const changePassword = async (userId: string, data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}) => {
+  try {
+    const response = await securityApi.put(`/api/users/${userId}/change-password`, data);
+    showAlert.success("Éxito", "Contraseña actualizada correctamente");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "No se pudo actualizar la contraseña.");
   }
 };
