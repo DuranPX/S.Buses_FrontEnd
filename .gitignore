@@ -25,4 +25,4 @@ dist-ssr
 venv
 .env
 SECURITY.md
-.env.local
+.env.example
