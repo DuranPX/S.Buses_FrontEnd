@@ -261,9 +261,6 @@ export const AdminUsers = () => {
           <h1>Gestión de Usuarios</h1>
           <p style={{ color: 'var(--text-muted)' }}>Listado de personal autorizado, suscriptores del sistema y accesos.</p>
         </div>
-        {can(MODULES.USUARIOS, 'escribir') && (
-          <Button label="+ Conceder Acceso" onClick={() => openForm()} />
-        )}
       </div>
 
       {/* Barra de búsqueda */}

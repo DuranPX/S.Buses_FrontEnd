@@ -21,7 +21,6 @@ export const ProtectedRoute = ({ children, permission }: ProtectedRouteProps) =>
   if (isLoading) return <Loader />;
   if (!isAuthenticated) return <Navigate to="/" replace />;
   
-  // Gate: Asegurar que activeRole esté definido antes de renderizar cualquier contenido protegido
   if (!activeRole) return null;
 
   if (permission && !can(permission.module, permission.action)) {
