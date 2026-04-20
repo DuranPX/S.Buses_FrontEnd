@@ -183,6 +183,11 @@ export const AdminRoles = () => {
                           </label>
                         ))}
                       </div>
+                      {mod === 'usuarios' && (
+                        <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#eab308', background: 'rgba(234,179,8,0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(234,179,8,0.2)' }}>
+                            <strong>Nota:</strong> Si otorgas permisos de usuarios, debes conceder permisos de <strong>leer roles</strong> para una correcta gestión.
+                        </div>
+                      )}
                     </div>
                   );
                 })}
