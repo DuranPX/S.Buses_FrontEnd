@@ -13,6 +13,12 @@ function AuthSuccess() {
     if (token) {
       // 1. Caso: Login directo sin 2FA
       localStorage.setItem('token', token);
+      
+      const refreshToken = searchParams.get('refreshToken');
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+      
       navigate('/dashboard'); // Y listos para seleccionar el rol
     } else if (require2fa === 'true') {
       // 2. Caso: OAuth fue exitoso pero pedimos 2FA extra
