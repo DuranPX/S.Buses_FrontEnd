@@ -115,13 +115,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           );
         })}
       </nav>
-
-      <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="glass" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
-          <p style={{ color: 'var(--text-muted)' }}>Pro Plan</p>
-          <p style={{ fontWeight: 600 }}>Ilimitado</p>
-        </div>
-      </div>
     </aside>
   );
 };
