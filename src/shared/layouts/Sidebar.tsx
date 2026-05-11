@@ -11,42 +11,60 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { canRead } = useAuthorization();
 
   const GROUPS = [
+    // ---- Administración del sistema ----
     {
       label: 'Administración',
       items: [
-        { module: MODULES.USUARIOS, path: '/admin/usuarios', label: 'Usuarios' },
-        { module: MODULES.ROLES, path: '/admin/roles', label: 'Roles' },
-        { module: MODULES.EMPRESAS, path: '/admin/empresas', label: 'Empresas' },
+        { module: MODULES.USUARIOS,       path: '/admin/usuarios',           label: 'Usuarios'       },
+        { module: MODULES.ROLES,          path: '/admin/roles',              label: 'Roles'          },
+        { module: MODULES.EMPRESAS,       path: '/admin/empresas',           label: 'Empresas'       },
       ]
     },
+    // ---- Operaciones / Flota ----
     {
       label: 'Operaciones',
       items: [
-        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
-        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
-        { module: MODULES.RUTAS, path: '/rutas', label: 'Rutas' },
-        { module: MODULES.PARADEROS, path: '/paraderos', label: 'Paraderos' },
-        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
-        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
-        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Incidentes' },
+        { module: MODULES.BUSES,          path: '/admin/buses',              label: 'Buses'          },
+        { module: MODULES.CONDUCTORES,    path: '/admin/conductores',        label: 'Conductores'    },
+        { module: MODULES.RUTAS,          path: '/rutas',                    label: 'Rutas'          },
+        { module: MODULES.PARADEROS,      path: '/paradero',                 label: 'Paraderos'      },
+        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones',     label: 'Programaciones' },
+        { module: MODULES.INCIDENTES,     path: '/admin/incidentes',         label: 'Incidentes'     },
       ]
     },
+    // ---- Conductor (visible solo con rol Conductor) ----
     {
-      label: 'Comercial & Pasajeros',
+      label: 'Mi Turno',
       items: [
-        { module: MODULES.CLIENTES, path: '/admin/clientes', label: 'Clientes' },
-        { module: MODULES.BOLETOS, path: '/boletos', label: 'Boletos' },
-        { module: MODULES.PAGOS, path: '/pagos', label: 'Pagos' },
-        { module: MODULES.RECARGAS, path: '/recargas', label: 'Recargas' },
-        { module: MODULES.VALIDACIONES, path: '/validaciones', label: 'Validaciones' },
+        { module: MODULES.TURNO_CONDUCTOR, path: '/conductor/turno',         label: 'Turno Actual'   },
+        { module: MODULES.INCIDENTES,      path: '/incidentes/crear',        label: 'Reportar Incidente' },
       ]
     },
+    // ---- Ciudadano / Pasajero ----
+    {
+      label: 'Mis Viajes',
+      items: [
+        { module: MODULES.BOLETOS,        path: '/boletos',                  label: 'Boletos'        },
+        { module: MODULES.VIAJES,         path: '/viajes/historial',         label: 'Historial'      },
+        { module: MODULES.CARTERA,        path: '/cartera/recarga',          label: 'Cartera'        },
+      ]
+    },
+    // ---- Analíticas ----
+    {
+      label: 'Analíticas',
+      items: [
+        { module: MODULES.ANALITICAS,     path: '/analiticas/ingresos',      label: 'Ingresos'       },
+        { module: MODULES.ANALITICAS,     path: '/analiticas/rango-etario',  label: 'Rango Etario'   },
+        { module: MODULES.ANALITICAS,     path: '/analiticas/incidentes',    label: 'Incidentes'     },
+      ]
+    },
+    // ---- Social ----
     {
       label: 'Social',
       items: [
-        { module: MODULES.MENSAJES, path: '/mensajes', label: 'Mensajes' },
-        { module: MODULES.GRUPOS, path: '/grupos', label: 'Grupos' },
-        { module: MODULES.RESENAS, path: '/resenas', label: 'Reseñas' },
+        { module: MODULES.MENSAJES,       path: '/mensajes',                 label: 'Mensajes'       },
+        { module: MODULES.GRUPOS,         path: '/grupos',                   label: 'Grupos'         },
+        { module: MODULES.RESENAS,        path: '/resenas',                  label: 'Reseñas'        },
       ]
     }
   ];

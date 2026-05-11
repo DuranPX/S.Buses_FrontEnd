@@ -18,6 +18,11 @@ export const MODULES = {
   GRUPOS: 'grupos',
   RESENAS: 'resenas',
   RECARGAS: 'recargas',
+  // Módulos nuevos — Fase 2-6
+  VIAJES: 'viajes',
+  CARTERA: 'cartera',
+  ANALITICAS: 'analiticas',
+  TURNO_CONDUCTOR: 'conductor',
 } as const;
 
 export type ModuleName = typeof MODULES[keyof typeof MODULES];

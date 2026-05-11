@@ -43,11 +43,13 @@ export const login = async (data: LoginData) => {
     const response = await securityApi.post("/auth/login", data);
     
     let token = null;
+    let refreshToken = null;
     let message = null;
 
-    // Nuevo formato: respuestas son JSON { token, message, error }
+    // Nuevo formato: respuestas son JSON { token, message, error, refreshToken }
     if (response.data && typeof response.data === 'object') {
       token = response.data.token;
+      refreshToken = response.data.refreshToken;
       message = response.data.message;
     } else if (typeof response.data === 'string') {
       // Backward compatibility por si el backend aún devuelve string en algún caso
@@ -60,7 +62,8 @@ export const login = async (data: LoginData) => {
     
     if (token) {
       localStorage.setItem("token", token);
-      return { token, message: message || "Autenticado" };
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      return { token, refreshToken, message: message || "Autenticado" };
     }
     
     // Si no hay token, probablemente es la redirección de 2FA
@@ -94,11 +97,13 @@ export const verify2faCode = async (email: string, codigo: string) => {
     const response = await securityApi.post("/auth/2fa/verify", { email, codigo });
     
     let token = null;
+    let refreshToken = null;
     let message = null;
 
-    // Nuevo formato: { token: "eyJ..." } o { message: "Cuenta activada..." }
+    // Nuevo formato: { token: "eyJ...", refreshToken: "..." } o { message: "Cuenta activada..." }
     if (response.data && typeof response.data === 'object') {
       token = response.data.token;
+      refreshToken = response.data.refreshToken;
       message = response.data.message;
     } else if (typeof response.data === 'string') {
       if (response.data.startsWith('eyJ')) {
@@ -108,7 +113,8 @@ export const verify2faCode = async (email: string, codigo: string) => {
 
     if (token) {
       localStorage.setItem("token", token);
-      return { token, message };
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      return { token, refreshToken, message };
     }
     
     return { token: null, message, raw: response.data };
@@ -148,9 +154,10 @@ export const selectRole = async (roleName: string) => {
   try {
     const response = await securityApi.post("/auth/select-role", { role: roleName });
     
-    // La API devuelve { token: "...", role: {...} }
-    if (response.data && response.data.token) {
-      localStorage.setItem("token", response.data.token);
+    // La API devuelve { token: "...", refreshToken: "...", role: {...} }
+    if (response.data) {
+      if (response.data.token) localStorage.setItem("token", response.data.token);
+      if (response.data.refreshToken) localStorage.setItem("refreshToken", response.data.refreshToken);
     }
     return response.data;
   } catch (error) {
@@ -174,9 +181,15 @@ export const logout = async () => {
   } finally {
     // SIEMPRE limpiar el estado local
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("activeRole");
     window.location.href = "/";
   }
+};
+
+export const refreshTokenCall = async (refreshToken: string) => {
+  const response = await securityApi.post("/auth/refresh", { refreshToken });
+  return response.data;
 };
 
 export const searchUsers = async (query: string) => {
