@@ -21,6 +21,15 @@ export interface RouteStop {
   tiempo_estimado: number;          // minutos
 }
 
+export interface RouteNode {
+  orden: number;
+  nodo: {
+    id: string;
+    latitud: number;
+    longitud: number;
+  };
+}
+
 export interface Route {
   id: string;
   codigo: string;
@@ -29,7 +38,9 @@ export interface Route {
   tarifa: number;
   tiempo_estimado_total: number; // minutos
   estado: boolean;
-  paraderos: RouteStop[];
+  paraderos: RouteStop[]; // Alias para compatibilidad
+  rutaParaderos?: RouteStop[]; // Nombre exacto del backend
+  rutaNodos?: RouteNode[];     // Geometría para el mapa
 }
 
 // Payload que llega por websocket (ubicación bus activo en la ruta)

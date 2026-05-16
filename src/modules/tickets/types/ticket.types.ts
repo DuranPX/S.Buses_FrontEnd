@@ -4,7 +4,7 @@
 // ================================================================
 
 // ── Enums (tal como los devuelve el backend en MAYÚSCULAS) ────────
-export type EstadoBoleto = 'ACTIVO' | 'COMPLETADO' | 'CANCELADO';
+export type EstadoBoleto = 'Activo' | 'Completado' | 'Cancelado';
 
 // ── Shapes de relaciones anidadas (lo que devuelve findAll/findOne) ─
 export interface BoletoCiudadano {
@@ -23,10 +23,14 @@ export interface BoletoProgramacion {
   id: string;
   ruta?: BoletoRuta;
   bus?: { id: string; placa?: string };
-  hora_salida?: string;
+  fecha?: string;
+  hora_salida: string;
+  tolerancia_minutos?: number;
   tarifa?: number;
   capacidad_maxima?: number;
-  pasajeros_actuales?: number;
+  pasajeros_actuales: number;
+  tipo_recurrencia?: string;
+  estado: string; // 'En_Curso', etc.
 }
 
 export interface BoletoMetodoPago {
@@ -40,17 +44,23 @@ export interface BoletoParadero {
   id: string;
   nombre: string;
   codigo?: string;
+  latitud?: string;
+  longitud?: string;
+  tipo?: string;
+  estado?: boolean;
 }
 
 // ── Respuesta RAW del backend (/boletos, /boletos/:id) ────────────
 export interface BoletoRaw {
   id: string;
   estado: EstadoBoleto;
-  monto_pagado: number;
+  monto_pagado: string | number;
   tarifa_pagada?: number;
-  fecha_emision?: string;   // ISO 8601; puede venir como createdAt dependiendo de la entidad
+  fecha_emision?: string;
   createdAt?: string;
-  qr_code?: string;
+  qr_validacion: string; // JSON dice qr_validacion
+  hora_abordaje: string;
+  hora_descenso: string | null;
   ciudadano?: BoletoCiudadano;
   programacion?: BoletoProgramacion;
   metodoPagoCiudadano?: BoletoMetodoPago;
@@ -65,34 +75,40 @@ export interface Ticket {
   estado: EstadoBoleto;
 
   // Economía
-  tarifa_pagada: number;
+  monto_pagado: number;
 
-  // Fechas
-  fecha_emision: string;        // ISO 8601, siempre presente tras normalizar
+  // Fechas y Tiempos
+  fecha_emision: string;
+  hora_abordaje: string;
+  hora_descenso: string | null;
 
   // Código QR para abordaje
   qr_code: string;
 
-  // IDs de relaciones (útiles para llamadas posteriores)
+  // IDs de relaciones
   ciudadano_id?: string;
   programacion_id?: string;
   metodo_pago_id?: string;
 
-  // Datos expandidos para la UI (opcionales, vienen de las relaciones)
-  ruta_codigo?: string;         // programacion.ruta.codigo
-  ruta_nombre?: string;         // programacion.ruta.nombre
-  origen_nombre?: string;       // paraderoAbordaje.nombre
-  destino_nombre?: string;      // paraderoDescenso.nombre  (null si viaje en curso)
-  saldo_restante?: number;      // sólo se conoce justo después de comprar
+  // Datos expandidos para la UI
+  ruta_codigo?: string;
+  ruta_nombre?: string;
+  origen_nombre?: string;
+  destino_nombre?: string;
+  saldo_restante?: number;
+
+  // Programación Info
+  programacion_estado?: string;
+  tolerancia_minutos?: number;
 }
 
 // ── DTO que espera POST /boletos/comprar ──────────────────────────
 export interface CreateBoletoDto {
-  ciudadano_id: string;
-  programacion_id: string;
-  metodo_pago_id: string;
-  paradero_abordaje_id: string;
-  paradero_descenso_id?: string;
-  monto_pagado: number;
-  tarifa_pagada: number;
+  programacionId: string;
+  metodoPagoId: string;
+  paraderoId: string;
+}
+
+export interface RegistrarDescensoDto {
+  paraderoDescensoId: string;
 }

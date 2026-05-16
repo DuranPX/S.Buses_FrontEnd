@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MAP_CENTER, MAP_DEFAULT_ZOOM, TILE_LAYER_URL, TILE_LAYER_ATTRIBUTION, createStopIcon, createBusIcon } from '../../../maps/mapConfig';
-import type { RouteStop, ActiveBusLocation } from '../types/route.types';
+import type { RouteStop, ActiveBusLocation, RouteNode } from '../types/route.types';
 
 // Componente auxiliar para ajustar los límites del mapa (bounds) a los paraderos
 const MapBounds = ({ stops }: { stops: RouteStop[] }) => {
@@ -25,13 +25,23 @@ const MapBounds = ({ stops }: { stops: RouteStop[] }) => {
 
 interface Props {
   stops: RouteStop[];
+  nodes?: RouteNode[];
   activeBuses: ActiveBusLocation[];
 }
 
-export const RouteMap = ({ stops, activeBuses }: Props) => {
-  // Ordenar paraderos y extraer coordenadas para la línea (Polyline)
-  const sortedStops = [...stops].sort((a, b) => a.orden - b.orden);
-  const pathCoordinates = sortedStops.map(s => [s.paradero.latitud, s.paradero.longitud] as [number, number]);
+export const RouteMap = ({ stops = [], nodes = [], activeBuses = [] }: Props) => {
+  // Filtrar y validar coordenadas para evitar errores de Leaflet (Cannot read properties of undefined (reading '0'))
+  const pathCoordinates: [number, number][] = nodes && nodes.length > 0
+    ? [...nodes]
+        .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+        .map(n => [n.nodo.latitud, n.nodo.longitud] as [number, number])
+        .filter(c => c[0] != null && c[1] != null && !isNaN(c[0]) && !isNaN(c[1]))
+    : [...stops]
+        .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+        .map(s => [s.paradero.latitud, s.paradero.longitud] as [number, number])
+        .filter(c => c[0] != null && c[1] != null && !isNaN(c[0]) && !isNaN(c[1]));
+
+  const sortedStops = [...stops].sort((a, b) => (a.orden || 0) - (b.orden || 0));
 
   return (
     <div style={{ height: '100%', width: '100%', borderRadius: '1rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -42,8 +52,10 @@ export const RouteMap = ({ stops, activeBuses }: Props) => {
       >
         <TileLayer url={TILE_LAYER_URL} attribution={TILE_LAYER_ATTRIBUTION} />
         
-        {/* Línea que conecta los paraderos */}
-        <Polyline positions={pathCoordinates} color="#6366f1" weight={4} opacity={0.8} />
+        {/* Renderizar polilínea solo si hay puntos válidos */}
+        {pathCoordinates.length > 1 && (
+          <Polyline positions={pathCoordinates} color="#6366f1" weight={4} opacity={0.8} />
+        )}
 
         {/* Marcadores de Paraderos */}
         {sortedStops.map(rs => (

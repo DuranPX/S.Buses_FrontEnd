@@ -44,8 +44,8 @@ const TicketSuccessPage = () => {
     : '—';
 
   const tarifaStr =
-    typeof ticket?.tarifa_pagada === 'number'
-      ? `$${ticket.tarifa_pagada.toLocaleString('es-CO')}`
+    typeof ticket?.monto_pagado === 'number'
+      ? `$${ticket.monto_pagado.toLocaleString('es-CO')}`
       : '—';
 
   return (

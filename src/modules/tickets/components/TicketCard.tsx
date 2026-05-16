@@ -11,15 +11,15 @@ import { TicketQR } from './TicketQR';
 // ── Helpers de presentación ──────────────────────────────────────
 
 const ESTADO_LABEL: Record<EstadoBoleto, string> = {
-  ACTIVO:     'Activo',
-  COMPLETADO: 'Completado',
-  CANCELADO:  'Cancelado',
+  Activo:     'Activo',
+  Completado: 'Completado',
+  Cancelado:  'Cancelado',
 };
 
 const ESTADO_COLORS: Record<EstadoBoleto, { bg: string; text: string }> = {
-  ACTIVO:     { bg: 'white',                    text: '#6366f1' },
-  COMPLETADO: { bg: 'rgba(52,211,153,0.15)',     text: '#34d399' },
-  CANCELADO:  { bg: 'rgba(239,68,68,0.15)',      text: '#ef4444' },
+  Activo:     { bg: 'white',                    text: '#6366f1' },
+  Completado: { bg: 'rgba(52,211,153,0.15)',     text: '#34d399' },
+  Cancelado:  { bg: 'rgba(239,68,68,0.15)',      text: '#ef4444' },
 };
 
 // ── Props ────────────────────────────────────────────────────────
@@ -49,11 +49,20 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
       : 'Fecha no disponible';
 
   const priceStr =
-    typeof ticket.tarifa_pagada === 'number'
-      ? `$${ticket.tarifa_pagada.toLocaleString('es-CO')}`
+    typeof ticket.monto_pagado === 'number'
+      ? `$${ticket.monto_pagado.toLocaleString('es-CO')}`
       : '---';
 
-  const estadoColors = ESTADO_COLORS[ticket.estado] ?? ESTADO_COLORS.ACTIVO;
+  const boardingDate = ticket.hora_abordaje ? new Date(ticket.hora_abordaje) : null;
+  const boardingStr =
+    boardingDate && !isNaN(boardingDate.getTime())
+      ? boardingDate.toLocaleTimeString('es-CO', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '--:--';
+
+  const estadoColors = ESTADO_COLORS[ticket.estado] ?? ESTADO_COLORS.Activo;
 
   const handleCancel = async () => {
     if (!onCancel) return;
@@ -91,7 +100,7 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
       {/* ── Banner superior ────────────────────────────────────── */}
       <div
         style={{
-          background: ticket.estado === 'ACTIVO' ? '#6366f1' : 'rgba(100,116,139,0.4)',
+          background: ticket.estado === 'Activo' ? '#6366f1' : 'rgba(100,116,139,0.4)',
           padding: '1rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
@@ -107,7 +116,7 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
             letterSpacing: '0.05em',
           }}
         >
-          {ticket.ruta_codigo ?? 'RUTA'}
+          {ticket.ruta_codigo ?? `BUS-${ticket.programacion_id?.slice(0, 4).toUpperCase() ?? 'TR'}`}
         </h3>
         <span
           style={{
@@ -193,18 +202,24 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
         >
           <div>
             <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Emisión
+              Abordaje
             </p>
-            <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem' }}>{dateStr}</p>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', fontWeight: 600 }}>{boardingStr}</p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Tarifa
+              Monto Pagado
             </p>
             <p style={{ margin: '0.2rem 0 0', fontSize: '1.05rem', fontWeight: 700, color: '#34d399' }}>
               {priceStr}
             </p>
           </div>
+        </div>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+           <span style={{ fontSize: '0.7rem', color: '#475569' }}>Emisión: {dateStr}</span>
+           {ticket.tolerancia_minutos && (
+             <span style={{ fontSize: '0.7rem', color: '#facc15' }}>Tol: {ticket.tolerancia_minutos}m</span>
+           )}
         </div>
       </div>
 
@@ -237,7 +252,7 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
       </div>
 
       {/* ── Acción de cancelación (opcional) ──────────────────── */}
-      {onCancel && ticket.estado === 'ACTIVO' && (
+      {onCancel && ticket.estado === 'Activo' && (
         <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           {cancelError && (
             <p style={{ margin: '0 0 0.5rem', fontSize: '0.75rem', color: '#ef4444', textAlign: 'center' }}>

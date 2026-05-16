@@ -55,9 +55,9 @@ export const VerifyCode = () => {
 
     try {
       const result = await verify2faCode(authFlow.email, code)
-      
+
       const savedToken = localStorage.getItem("token")
-      
+
       if (savedToken || (result && result.token)) {
         syncSession(result?.token || savedToken, authFlow.email);
         showAlert.success("¡Verificación exitosa!", "Has iniciado sesión correctamente.")
@@ -74,7 +74,7 @@ export const VerifyCode = () => {
       // Extraer intentosRestantes del error del backend
       const err = error as AxiosError<{ error?: string, intentosRestantes?: number }>;
       const intentosBackend = err?.response?.data?.intentosRestantes;
-      
+
       if (intentosBackend !== undefined) {
         // Usar los intentos del backend como fuente de verdad
         setAuthFlow({ ...authFlow, attemptsLeft: intentosBackend });
@@ -103,7 +103,7 @@ export const VerifyCode = () => {
       setIsExpired(false)
       setCode("")
       showAlert.success("Código reenviado", "Se ha enviado un nuevo código a tu correo.")
-    } catch(err) {
+    } catch (err) {
     }
   }
 
@@ -146,11 +146,11 @@ export const VerifyCode = () => {
             Intentos restantes: {authFlow.attemptsLeft}
           </div>
 
-          <Button 
-            type="submit" 
-            label="Verificar" 
-            disabled={isExpired || authFlow.attemptsLeft <= 0} 
-            style={{ width: '100%', marginBottom: '1rem' }} 
+          <Button
+            type="submit"
+            label="Verificar"
+            disabled={isExpired || authFlow.attemptsLeft <= 0}
+            style={{ width: '100%', marginBottom: '1rem' }}
           />
 
           <button

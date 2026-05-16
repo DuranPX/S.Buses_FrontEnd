@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { logout as logoutService, selectRole } from "../services/auth.service";
+import { logout as logoutService, selectRole, syncBusinessUser } from "../services/auth.service";
 import { useAuthFlow } from "./AuthFlowContext";
 
 export interface Permission {
@@ -147,6 +147,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals });
       handleSetActiveRole(roleObj);
+      // Sincronizar en background con ms-business (solo con token definitivo)
+      syncBusinessUser().catch(() => {});
     } else {
       // Compatibility fallback
       const rawRoles = payload?.roles || ["USER"];
@@ -161,6 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [fallbackRole], authExternals });
       handleSetActiveRole(fallbackRole);
     }
+
   };
 
   useEffect(() => {

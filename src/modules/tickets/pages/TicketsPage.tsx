@@ -1,7 +1,7 @@
 // ================================================================
 // TicketsPage.tsx — Módulo Boletos
 // Lista de boletos ACTIVOS del ciudadano autenticado.
-// Conectada al backend real vía useTickets → ticketsService.
+// Integrado con flujo HU-ENTR-2-003 (Abordaje y generación de boleto)
 // ================================================================
 
 import { useTickets } from '../hooks/useTickets';
@@ -46,12 +46,21 @@ const TicketsPage = () => {
           >
             Mis Boletos
           </h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>
-            Boletos activos listos para usar. Presenta el código QR al abordar.
+
+          <p
+            style={{
+              color: '#64748b',
+              margin: 0,
+              fontSize: '0.9rem',
+            }}
+          >
+            Gestiona tus boletos activos y registra nuevos abordajes.
           </p>
         </div>
 
+        {/* ── Acciones ───────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          {/* Refresh */}
           <button
             type="button"
             onClick={refetch}
@@ -68,9 +77,11 @@ const TicketsPage = () => {
           >
             ↻
           </button>
+
+          {/* Nuevo abordaje */}
           <button
             type="button"
-            onClick={() => navigate('/rutas')}
+            onClick={() => navigate('/abordaje')}
             style={{
               background: '#6366f1',
               color: 'white',
@@ -80,14 +91,15 @@ const TicketsPage = () => {
               cursor: 'pointer',
               fontWeight: 600,
               fontSize: '0.9rem',
+              boxShadow: '0 4px 14px rgba(99,102,241,0.25)',
             }}
           >
-            + Comprar boleto
+            + Abordar bus
           </button>
         </div>
       </div>
 
-      {/* ── Contenido principal ─────────────────────────────────── */}
+      {/* ── Contenido principal ───────────────────────────────── */}
       {isLoading ? (
         <div
           style={{
@@ -116,6 +128,7 @@ const TicketsPage = () => {
           }}
         >
           <span>{error}</span>
+
           <button
             type="button"
             onClick={refetch}
@@ -134,7 +147,7 @@ const TicketsPage = () => {
           </button>
         </div>
       ) : tickets.length === 0 ? (
-        /* Estado vacío */
+        /* ── Estado vacío ───────────────────────────────────── */
         <div
           style={{
             textAlign: 'center',
@@ -149,32 +162,68 @@ const TicketsPage = () => {
             gap: '0.75rem',
           }}
         >
-          <span style={{ fontSize: '2.5rem' }}>🎫</span>
-          <h3 style={{ margin: 0, color: '#f8fafc', fontWeight: 600 }}>
-            No tienes boletos activos
-          </h3>
-          <p style={{ margin: 0, fontSize: '0.9rem' }}>
-            Compra un boleto para iniciar tu próximo viaje.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/rutas')}
+          <span style={{ fontSize: '2.5rem' }}>🚌</span>
+
+          <h3
             style={{
-              marginTop: '0.5rem',
-              background: '#10b981',
-              color: 'white',
-              padding: '0.65rem 1.5rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              cursor: 'pointer',
+              margin: 0,
+              color: '#f8fafc',
               fontWeight: 600,
             }}
           >
-            Explorar rutas
-          </button>
+            No tienes boletos activos
+          </h3>
+
+          <p style={{ margin: 0, fontSize: '0.9rem' }}>
+            Realiza un abordaje para generar tu primer boleto.
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.75rem',
+              marginTop: '0.5rem',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            {/* CTA principal */}
+            <button
+              type="button"
+              onClick={() => navigate('/abordaje')}
+              style={{
+                background: '#10b981',
+                color: 'white',
+                padding: '0.65rem 1.5rem',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              Abordar bus
+            </button>
+
+            {/* CTA secundario */}
+            <button
+              type="button"
+              onClick={() => navigate('/rutas')}
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                color: '#94a3b8',
+                padding: '0.65rem 1.5rem',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              Ver rutas
+            </button>
+          </div>
         </div>
       ) : (
-        /* Grid de boletos */
+        /* ── Grid de boletos ───────────────────────────────── */
         <div
           style={{
             display: 'grid',

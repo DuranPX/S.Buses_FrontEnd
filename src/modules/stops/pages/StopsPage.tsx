@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { stopsMockService } from '../services/stopsMockService';
+import { stopsService } from '../services/stopsService';
 import type { Stop } from '../types/stop.types';
 import { Loader } from '../../../shared/components/ui/Loader';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -14,7 +14,7 @@ const StopsPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    stopsMockService.getAll()
+    stopsService.getAll()
       .then(data => setStops(data))
       .catch(() => setError('Error al cargar la red de paraderos.'))
       .finally(() => setIsLoading(false));
