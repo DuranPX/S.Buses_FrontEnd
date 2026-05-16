@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { routesMockService } from '../services/routesMockService';
+import { routesService } from '../services/routesService';
 import type { Route } from '../types/route.types';
 
 export const useRouteDetails = (id: string | undefined) => {
@@ -12,7 +12,7 @@ export const useRouteDetails = (id: string | undefined) => {
     setIsLoading(true);
     setError(null);
 
-    routesMockService.getById(id).then(data => {
+    routesService.getByIdComplete(id).then(data => {
       if (!data) setError('Ruta no encontrada.');
       else setRoute(data);
     }).catch(() => {
@@ -22,3 +22,4 @@ export const useRouteDetails = (id: string | undefined) => {
 
   return { route, isLoading, error };
 };
+

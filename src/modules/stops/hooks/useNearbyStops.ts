@@ -1,23 +1,30 @@
 import { useState, useEffect } from 'react';
-import { stopsMockService } from '../services/stopsMockService';
+import { stopsService } from '../services/stopsService';
 import type { NearbyStop, Coordinates } from '../types/stop.types';
 
 export const useNearbyStops = (location: Coordinates | null) => {
   const [stops, setStops] = useState<NearbyStop[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!location) return;
 
-    setIsLoading(true);
-    setError(null);
+    const fetchStops = async () => {
+      setLoading(true);
+      try {
+        const nearbyStops = await stopsService.getNearby(location, 2000); // 2000 meters = 2km
+        setStops(nearbyStops);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch nearby stops'));
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    stopsMockService.getNearby(location, 2) // 2km radius
-      .then(data => setStops(data))
-      .catch(() => setError('Error al cargar paraderos cercanos.'))
-      .finally(() => setIsLoading(false));
-  }, [location]);
+    fetchStops();
+  }, [location?.lat, location?.lng]);
 
-  return { stops, isLoading, error };
+  return { stops, loading, error };
 };

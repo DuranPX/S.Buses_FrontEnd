@@ -17,19 +17,21 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       items: [
         { module: MODULES.USUARIOS,       path: '/admin/usuarios',           label: 'Usuarios'       },
         { module: MODULES.ROLES,          path: '/admin/roles',              label: 'Roles'          },
+        { module: MODULES.RUTAS,          path: '/admin/rutas',              label: 'Gestión de Rutas' },
+        { module: MODULES.PARADEROS,      path: '/admin/paraderos',          label: 'Gestión de Paraderos' },
         { module: MODULES.EMPRESAS,       path: '/admin/empresas',           label: 'Empresas'       },
       ]
     },
     // ---- Operaciones / Flota ----
     {
-      label: 'Operaciones',
+      label: 'Servicios',
       items: [
+        { module: MODULES.RUTAS,          path: '/rutas',                    label: 'Mapa de Rutas'  },
+        { module: MODULES.PARADEROS,      path: '/paradero',                 label: 'Paraderos Cercanos' },
         { module: MODULES.BUSES,          path: '/admin/buses',              label: 'Buses'          },
         { module: MODULES.CONDUCTORES,    path: '/admin/conductores',        label: 'Conductores'    },
-        { module: MODULES.RUTAS,          path: '/rutas',                    label: 'Rutas'          },
-        { module: MODULES.PARADEROS,      path: '/paradero',                 label: 'Paraderos'      },
         { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones',     label: 'Programaciones' },
-        { module: MODULES.INCIDENTES,     path: '/admin/incidentes',         label: 'Incidentes'     },
+        { module: MODULES.INCIDENTES,     path: '/admin/incidentes',         label: 'Monitor de Incidentes' },
       ]
     },
     // ---- Conductor (visible solo con rol Conductor) ----
@@ -44,9 +46,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     {
       label: 'Mis Viajes',
       items: [
-        { module: MODULES.BOLETOS,        path: '/boletos',                  label: 'Boletos'        },
+        { module: MODULES.BOLETOS,        path: '/abordaje',                 label: 'Abordar Bus'    },
+        { module: MODULES.BOLETOS,        path: '/boletos',                  label: 'Mis Boletos'        },
         { module: MODULES.VIAJES,         path: '/viajes/historial',         label: 'Historial'      },
-        { module: MODULES.CARTERA,        path: '/cartera/recarga',          label: 'Cartera'        },
+        { module: MODULES.CARTERA,        path: '/cartera/recarga',          label: 'Mi Cartera'        },
       ]
     },
     // ---- Analíticas ----
@@ -115,13 +118,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           );
         })}
       </nav>
-
-      <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="glass" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
-          <p style={{ color: 'var(--text-muted)' }}>Pro Plan</p>
-          <p style={{ fontWeight: 600 }}>Ilimitado</p>
-        </div>
-      </div>
     </aside>
   );
 };

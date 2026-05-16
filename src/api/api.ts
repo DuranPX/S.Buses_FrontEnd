@@ -15,14 +15,8 @@ export const securityApi = axios.create({
   },
 });
 
-// ----------------------------------------------------------------
-// ms-business API
-// TODO: descomentar baseURL cuando los endpoints del backend estén listos.
-// Los servicios mock NO usan esta instancia; la usarán los servicios reales.
-// ----------------------------------------------------------------
 export const businessApi = axios.create({
-  // baseURL: import.meta.env.VITE_MS_BUSINESS_API, // ← activar con backend real
-  baseURL: 'http://localhost:3001', // placeholder
+  baseURL: import.meta.env.VITE_MS_BUSINESS_API,
   headers: {
     "Content-Type": "application/json",
   },

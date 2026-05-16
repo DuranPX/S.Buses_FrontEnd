@@ -69,7 +69,7 @@ const RouteDetailPage = () => {
         
         {/* Izquierda: Mapa */}
         <div style={{ flex: 1, position: 'relative', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-          <RouteMap stops={route.paraderos} activeBuses={activeBuses} />
+          <RouteMap stops={route.paraderos} nodes={route.rutaNodos} activeBuses={activeBuses} />
         </div>
 
         {/* Derecha: Paneles de Info (Timeline + Realtime) */}

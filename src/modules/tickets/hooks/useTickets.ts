@@ -1,5 +1,11 @@
+// ================================================================
+// useTickets.ts — Módulo Boletos
+// Hook que consume ticketsService (backend real, autenticado via JWT).
+// El backend identifica al ciudadano desde el token; no se pasa ID manualmente.
+// ================================================================
+
 import { useState, useEffect, useCallback } from 'react';
-import { ticketsMockService } from '../services/ticketsMockService';
+import { ticketsService } from '../services/ticketsService';
 import type { Ticket } from '../types/ticket.types';
 
 export const useTickets = () => {
@@ -11,10 +17,11 @@ export const useTickets = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await ticketsMockService.getMyTickets();
-      setTickets(data);
+      // Sin ciudadanoId: el backend filtra por el usuario del JWT
+      const data = await ticketsService.getMyTickets();
+      setTickets(data.filter(t => t.estado === 'Activo'));
     } catch {
-      setError('No se pudieron cargar tus boletos activos.');
+      setError('No se pudieron cargar tus boletos. Verifica tu conexión.');
     } finally {
       setIsLoading(false);
     }
@@ -22,5 +29,14 @@ export const useTickets = () => {
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
-  return { tickets, isLoading, error, refetch: fetchTickets };
+  const cancelTicket = useCallback(async (id: string) => {
+    try {
+      await ticketsService.cancelTicket(id);
+      await fetchTickets();
+    } catch (e: unknown) {
+      throw new Error((e as Error).message);
+    }
+  }, [fetchTickets]);
+
+  return { tickets, isLoading, error, refetch: fetchTickets, cancelTicket };
 };

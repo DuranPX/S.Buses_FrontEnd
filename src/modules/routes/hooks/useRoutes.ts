@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { routesMockService } from '../services/routesMockService';
+import { routesService } from '../services/routesService';
 import type { Route, RouteFilters } from '../types/route.types';
 
 export const useRoutes = () => {
@@ -12,7 +12,7 @@ export const useRoutes = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await routesMockService.getAll(filters);
+      const data = await routesService.getAll(filters);
       setRoutes(data);
     } catch {
       setError('No se pudieron cargar las rutas.');
@@ -25,3 +25,4 @@ export const useRoutes = () => {
 
   return { routes, isLoading, error, filters, setFilters, refetch: fetchRoutes };
 };
+
