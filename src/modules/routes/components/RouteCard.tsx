@@ -47,8 +47,8 @@ export const RouteCard = ({ route }: Props) => {
       </p>
 
       <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '0.25rem' }}>
-        <span>🚏 {route.paraderos.length} paraderos</span>
-        <span>⏱ {route.tiempo_estimado_total} min</span>
+        <span>🚏 {(route.paraderos || []).length} paraderos</span>
+        <span>⏱ {route.tiempo_estimado_total || 0} min</span>
       </div>
     </div>
   );

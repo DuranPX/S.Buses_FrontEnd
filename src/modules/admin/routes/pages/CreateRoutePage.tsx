@@ -1,108 +1,224 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css'; // CRITICO: Sin esto el mapa sale fragmentado
+import { routesService } from '../../../routes/services/routesService';
+import type { CreateRutaFullDto } from '../../../routes/services/routesService';
+import { stopsService } from '../../../../modules/stops/services/stopsService';
+import type { Stop } from '../../../../modules/stops/types/stop.types';
+import { nodesService } from '../../../../modules/stops/services/nodesService';
+import { Loader } from '../../../../shared/components/ui/Loader';
 
-// Icono temporal
-const dotIcon = L.divIcon({ className: 'custom-dot-icon', html: '<div style="width:12px;height:12px;background:#6366f1;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
+// Icono para puntos de trazo (nodos)
+const dotIcon = L.divIcon({ 
+  className: 'custom-dot-icon', 
+  html: '<div style="width:10px;height:10px;background:#6366f1;border-radius:50%;border:1px solid white;"></div>', 
+  iconSize: [10, 10], 
+  iconAnchor: [5, 5] 
+});
+
+// Icono para paraderos (Asegurar que sea visible)
+const stopIcon = L.divIcon({ 
+  className: 'custom-stop-icon', 
+  html: '<div style="width:14px;height:14px;background:#10b981;border-radius:50%;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>', 
+  iconSize: [14, 14], 
+  iconAnchor: [7, 7] 
+});
 
 const MapClicker = ({ onMapClick }: { onMapClick: (latlng: L.LatLng) => void }) => {
-  useMapEvents({
-    click(e) {
-      onMapClick(e.latlng);
-    }
-  });
+  useMapEvents({ click(e) { onMapClick(e.latlng); } });
   return null;
+};
+
+// Componente para corregir el fragmentado del mapa al cargar
+const LeafletResizeHandler = () => {
+  const map = useMap();
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }, [map]);
+  return null;
+};
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371e3; // Radio de la Tierra en metros
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; 
 };
 
 const CreateRoutePage = () => {
   const navigate = useNavigate();
-  const [points, setPoints] = useState<L.LatLng[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [nodes, setNodes] = useState<L.LatLng[]>([]);
+  const [allStops, setAllStops] = useState<Stop[]>([]);
+  const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
+  const [isLoadingStops, setIsLoadingStops] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    if (points.length < 2) return alert('Dibuja al menos 2 puntos en el mapa');
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
+  const [formData, setFormData] = useState({
+    codigo: '',
+    nombre: '',
+    descripcion: '',
+    tarifa: 2800,
+    tiempo_estimado_total: 45
+  });
+
+  useEffect(() => {
+    stopsService.getAll()
+      .then(setAllStops)
+      .finally(() => setIsLoadingStops(false));
+  }, []);
+
+  const handleSave = async () => {
+    if (!formData.nombre) return alert('El Nombre de la ruta es obligatorio');
+    if (selectedStopIds.length < 3) return alert('Debes seleccionar al menos 3 paraderos (Origen, Intermedio y Destino)');
+
+    setIsSaving(true);
+    try {
+      // 1. Persistir los Nodos de geometría primero
+      const createdNodes = await Promise.all(
+        nodes.map(n => nodesService.create({ latitud: n.lat, longitud: n.lng }))
+      );
+
+      // 2. Preparar el DTO de paraderos con cálculo de distancia/tiempo
+      const paraderosDto = selectedStopIds.map((id, index) => {
+        const currentStop = allStops.find(s => s.id === id);
+        const prevStopId = index > 0 ? selectedStopIds[index - 1] : null;
+        const prevStop = allStops.find(s => s.id === prevStopId);
+
+        let distance = 0;
+        let time = 0;
+
+        if (prevStop && currentStop) {
+          distance = calculateDistance(
+            prevStop.latitud, prevStop.longitud, 
+            currentStop.latitud, currentStop.longitud
+          );
+          time = Math.round(distance / 300) + 1;
+        }
+
+        return {
+          paraderoId: id,
+          distanciaAnterior: Math.round(distance),
+          tiempoEstimadoMins: time
+        };
+      });
+
+      // 3. Payload final con geometría
+      const dto: CreateRutaFullDto = {
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        tarifa: formData.tarifa,
+        paraderos: paraderosDto,
+        nodos: createdNodes.map(node => ({ nodoId: node.id }))
+      };
+
+      await routesService.createFull(dto);
       navigate('/admin/rutas');
-    }, 1000);
+    } catch (e) {
+      alert('Error al crear la ruta. Revisa que los paraderos y nodos sean válidos.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleStop = (id: string) => {
+    setSelectedStopIds(prev => 
+      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+    );
   };
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto', height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.25rem', color: '#f8fafc' }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.25rem', color: '#f8fafc' }}>
             Constructor de Rutas
           </h1>
-          <p style={{ color: '#94a3b8', margin: 0 }}>
-            Haz clic en el mapa para trazar el recorrido de la nueva ruta.
+          <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.9rem' }}>
+            Configura los datos y selecciona los paraderos en el mapa o lista.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.8rem' }}>
+          <button onClick={() => navigate('/admin/rutas')} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '0.9rem' }}>Cancelar</button>
           <button 
-            onClick={() => setPoints([])}
-            style={{ background: 'rgba(255,255,255,0.1)', color: '#f8fafc', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
+            onClick={handleSave} disabled={isSaving}
+            style={{ background: '#10b981', color: 'white', padding: '0.5rem 1.2rem', borderRadius: '0.5rem', border: 'none', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.9rem', opacity: isSaving ? 0.5 : 1, boxShadow: '0 4px 12px rgba(16,185,129,0.2)' }}
           >
-            Limpiar Trazo
-          </button>
-          <button 
-            onClick={handleSave} disabled={isProcessing || points.length < 2}
-            style={{ background: '#10b981', color: 'white', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', border: 'none', cursor: (isProcessing || points.length < 2) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: (isProcessing || points.length < 2) ? 0.5 : 1 }}
-          >
-            {isProcessing ? 'Guardando...' : 'Guardar Ruta'}
+            {isSaving ? 'Guardando...' : 'Guardar Ruta'}
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem', flex: 1, minHeight: 0 }}>
-        {/* Panel Formulario */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1rem', padding: '1.5rem', overflowY: 'auto' }}>
-          <h3 style={{ margin: '0 0 1rem', color: '#f8fafc' }}>Datos Base</h3>
-          
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Código (Ej. R-01)</label>
-            <input type="text" placeholder="R-XX" style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
-          </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '1.5rem', flex: 1, minHeight: 0 }}>
+        {/* Panel Izquierdo: Formulario + Paraderos */}
+        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1rem', padding: '1.2rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', backdropFilter: 'blur(10px)' }}>
+          <section>
+            <h3 style={{ margin: '0 0 0.8rem', color: '#f8fafc', fontSize: '0.95rem', opacity: 0.8 }}>1. Datos Generales</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+              <input type="text" placeholder="Nombre de la ruta" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} style={{ width: '100%', padding: '0.65rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.9rem' }} />
+              <input type="text" placeholder="Descripción opcional" value={formData.descripcion} onChange={e => setFormData({...formData, descripcion: e.target.value})} style={{ width: '100%', padding: '0.65rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.9rem' }} />
+              <input type="number" placeholder="Tarifa ($)" value={formData.tarifa} onChange={e => setFormData({...formData, tarifa: Number(e.target.value)})} style={{ width: '100%', padding: '0.65rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.9rem' }} />
+            </div>
+          </section>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Nombre de la Ruta</label>
-            <input type="text" placeholder="Centro - Terminal" style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Tarifa Base ($)</label>
-            <input type="number" defaultValue={2800} style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
-          </div>
-
-          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '1.5rem 0' }} />
-
-          <h3 style={{ margin: '0 0 1rem', color: '#f8fafc' }}>Estadísticas del Trazo</h3>
-          <p style={{ color: '#cbd5e1', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
-            Puntos Marcados: <strong>{points.length}</strong>
-          </p>
+          <section style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <h3 style={{ margin: '0 0 1rem', color: '#f8fafc', fontSize: '1rem' }}>2. Paraderos Asociados ({selectedStopIds.length})</h3>
+            <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', padding: '0.5rem' }}>
+              {isLoadingStops ? <Loader /> : allStops.map(stop => (
+                <div 
+                  key={stop.id} 
+                  onClick={() => toggleStop(stop.id)}
+                  style={{ padding: '0.6rem', borderRadius: '0.4rem', marginBottom: '0.4rem', cursor: 'pointer', background: selectedStopIds.includes(stop.id) ? 'rgba(16,185,129,0.2)' : 'transparent', border: `1px solid ${selectedStopIds.includes(stop.id) ? '#10b981' : 'rgba(255,255,255,0.05)'}`, transition: 'all 0.2s' }}
+                >
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{stop.nombre}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{stop.codigo}</div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
 
-        {/* Mapa Editor */}
-        <div style={{ borderRadius: '1rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Panel Derecho: Mapa */}
+        <div style={{ borderRadius: '1rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', position: 'relative', background: '#0f172a' }}>
           <MapContainer 
             center={[5.06889, -75.51738]} 
             zoom={14} 
-            style={{ width: '100%', height: '100%', background: '#0f172a' }}
+            style={{ width: '100%', height: '100%' }}
           >
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            <TileLayer 
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+              attribution='&copy; OpenStreetMap' 
             />
-            <MapClicker onMapClick={(latlng) => setPoints(p => [...p, latlng])} />
+            <LeafletResizeHandler />
+            <MapClicker onMapClick={(latlng) => setNodes(p => [...p, latlng])} />
             
-            {points.length > 0 && (
-              <Polyline positions={points.map(p => [p.lat, p.lng])} color="#6366f1" weight={4} opacity={0.8} />
-            )}
-            
-            {points.map((p, i) => (
-              <Marker key={i} position={p} icon={dotIcon} />
+            {/* Trazo de Nodos */}
+            <Polyline positions={nodes.map(n => [n.lat, n.lng])} color="#6366f1" weight={3} opacity={0.6} />
+            {nodes.map((n, i) => <Marker key={`node-${i}`} position={n} icon={dotIcon} />)}
+
+            {/* Paraderos */}
+            {allStops.map(stop => (
+              <Marker 
+                key={stop.id} 
+                position={[stop.latitud, stop.longitud]} 
+                icon={stopIcon}
+                eventHandlers={{ click: () => toggleStop(stop.id) }}
+              >
+                <Popup>
+                  <div style={{ color: '#000' }}>
+                    <strong>{stop.nombre}</strong><br/>
+                    Código: {stop.codigo}
+                  </div>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
         </div>

@@ -1,5 +1,5 @@
 import { showAlert } from "../../../shared/utils/alerts";
-import { securityApi } from "../../../api/api";
+import { securityApi, businessApi } from "../../../api/api";
 import type { AxiosError } from "axios";
 
 export interface LoginData {
@@ -22,7 +22,7 @@ export interface RegisterData {
 const handleApiError = (error: unknown, defaultMessage: string) => {
   const err = error as AxiosError<{ message?: string, error?: string, errors?: Record<string, string> }>;
   let message = defaultMessage;
-  
+
   if (err.response?.data) {
     if (err.response.data.error) {
       message = err.response.data.error;
@@ -33,7 +33,7 @@ const handleApiError = (error: unknown, defaultMessage: string) => {
       if (firstError) message = firstError;
     }
   }
-  
+
   showAlert.error("Error", message);
   throw error;
 };
@@ -41,7 +41,7 @@ const handleApiError = (error: unknown, defaultMessage: string) => {
 export const login = async (data: LoginData) => {
   try {
     const response = await securityApi.post("/auth/login", data);
-    
+
     let token = null;
     let refreshToken = null;
     let message = null;
@@ -59,13 +59,13 @@ export const login = async (data: LoginData) => {
         message = response.data;
       }
     }
-    
+
     if (token) {
       localStorage.setItem("token", token);
       if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
       return { token, refreshToken, message: message || "Autenticado" };
     }
-    
+
     // Si no hay token, probablemente es la redirección de 2FA
     return { token: null, message: message || "Verificación requerida" };
   } catch (error) {
@@ -95,7 +95,7 @@ export const send2faCode = async (email: string, proposito: "LOGIN" | "REGISTRO"
 export const verify2faCode = async (email: string, codigo: string) => {
   try {
     const response = await securityApi.post("/auth/2fa/verify", { email, codigo });
-    
+
     let token = null;
     let refreshToken = null;
     let message = null;
@@ -116,15 +116,15 @@ export const verify2faCode = async (email: string, codigo: string) => {
       if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
       return { token, refreshToken, message };
     }
-    
+
     return { token: null, message, raw: response.data };
   } catch (error) {
     // Extraer intentosRestantes del error si viene
     const err = error as AxiosError<{ error?: string, intentosRestantes?: number }>;
     const intentosRestantes = err.response?.data?.intentosRestantes;
-    
+
     handleApiError(error, "Código 2FA inválido o expirado.");
-    
+
     // Re-throw con datos extra para que el componente pueda leer intentosRestantes
     // (handleApiError ya hace throw, así que esto es por si se modifica)
     return { token: null, intentosRestantes };
@@ -153,7 +153,7 @@ export const verifyRecoveryCode = async (data: any) => {
 export const selectRole = async (roleName: string) => {
   try {
     const response = await securityApi.post("/auth/select-role", { role: roleName });
-    
+
     // La API devuelve { token: "...", refreshToken: "...", role: {...} }
     if (response.data) {
       if (response.data.token) localStorage.setItem("token", response.data.token);
@@ -251,5 +251,15 @@ export const changePassword = async (userId: string, data: {
     return response.data;
   } catch (error) {
     handleApiError(error, "No se pudo actualizar la contraseña.");
+  }
+};
+
+export const syncBusinessUser = async () => {
+  try {
+    const response = await businessApi.post("/auth/sync-user");
+    return response.data;
+  } catch (error) {
+    console.warn("Fallo sincronización con ms-business:", error);
+    return null;
   }
 };

@@ -93,7 +93,10 @@ export const setupInterceptors = (api: AxiosInstance) => {
     (error) => {
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
-        if (!window.location.pathname.includes("/login")) {
+        // No redirigir si es un endpoint de background/opcional
+        const url = error.config?.url ?? "";
+        const isSilentEndpoint = url.includes("/auth/sync-user");
+        if (!isSilentEndpoint && !window.location.pathname.includes("/login")) {
           import("../shared/utils/alerts").then(({ showAlert }) => {
             showAlert.warning("Sesión expirada", "Por favor, inicia sesión de nuevo.");
             setTimeout(() => window.location.href = "/login?reason=session_expired", 2000);

@@ -16,13 +16,13 @@ const phoneRegex = /^[+]?[0-9]{7,15}$/
 /** Calcula la fortaleza de la contraseña: 0='', 1='Débil', 2='Media', 3='Fuerte' */
 const getPasswordStrength = (password: string): { level: number; label: string; color: string } => {
   if (!password) return { level: 0, label: '', color: 'transparent' };
-  
+
   let score = 0;
   if (password.length >= 8) score++;
   if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
   if (/\d/.test(password)) score++;
   if (/[@$!%*?&]/.test(password)) score++;
-  
+
   if (score <= 1) return { level: 1, label: 'Débil', color: '#ef4444' };
   if (score <= 2) return { level: 2, label: 'Media', color: '#f59e0b' };
   if (score <= 3) return { level: 2, label: 'Media', color: '#f59e0b' };
@@ -82,7 +82,7 @@ export const Login = () => {
 
   const validateRegistration = () => {
     if (!validate(registerData)) return false;
-    
+
     if (registerData.name.length < 2 || registerData.name.length > 50) {
       showAlert.warning("Nombre inválido", "El nombre debe tener entre 2 y 50 caracteres.")
       return false
@@ -105,32 +105,32 @@ export const Login = () => {
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!validate(loginData)) return
-    
+
     if (!executeRecaptcha) {
       showAlert.error("Error", "reCAPTCHA no está disponible en este momento.")
       return
     }
 
     const recaptchaToken = await executeRecaptcha("login")
-    
+
     try {
       const result = await login({ ...loginData, recaptchaToken })
-      
+
       const savedToken = localStorage.getItem("token")
-      
+
       // Si el backend no devuelve token y tampoco está un token salvado temporalmente, significa que se envió el correo 2FA
       if ((result && !result.token) && !savedToken) {
-        setAuthFlow({ 
-          requires2FA: true, 
-          email: loginData.email, 
-          expiresAt: Date.now() + 60000, 
-          attemptsLeft: 3 
+        setAuthFlow({
+          requires2FA: true,
+          email: loginData.email,
+          expiresAt: Date.now() + 60000,
+          attemptsLeft: 3
         })
         showAlert.info("Verificación requerida", result.message || "Se ha enviado un código a tu correo.")
         navigate("/verify-code")
         return
       }
-      
+
       if (savedToken || (result && result.token)) {
         // Usa el contexto de auth para decodificar el JWT y actualizar el estado global.
         syncSession(result?.token || savedToken, loginData.email);
@@ -145,22 +145,22 @@ export const Login = () => {
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!validateRegistration()) return
-    
+
     if (!executeRecaptcha) {
       showAlert.error("Error", "reCAPTCHA no está disponible.")
       return
     }
 
     const recaptchaToken = await executeRecaptcha("register")
-    
+
     try {
       await register({ ...registerData, recaptchaToken })
-      
+
       // En vez de requerirle login otra vez como antes, iniciamos el flujo de verificación
-      setAuthFlow({ 
-        requires2FA: true, 
-        email: registerData.email, 
-        expiresAt: Date.now() + 60000, 
+      setAuthFlow({
+        requires2FA: true,
+        email: registerData.email,
+        expiresAt: Date.now() + 60000,
         attemptsLeft: 3,
         purpose: "REGISTRO" // Indicamos que es de Registro para que el re-envio y el verify sepan que NO recibirán Token
       })
@@ -175,7 +175,7 @@ export const Login = () => {
   return (
     <div className="auth-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className={`auth-container ${isSignUp ? "right-panel-active" : ""}`}>
-        
+
         {/* Sign Up Form */}
         <div className="auth-form-container sign-up-container">
           <form onSubmit={handleRegisterSubmit} className="glass" style={{ padding: '2rem 3rem', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto' }}>

@@ -9,70 +9,39 @@
 // ================================================================
 
 import type { BoletoRaw, CreateBoletoDto, Ticket } from '../types/ticket.types';
-
-// Ajusta esta variable a la de tu proyecto (puede ser import.meta.env.VITE_API_URL, etc.)
-const BASE = import.meta.env.VITE_BUSINESS_API_URL ?? 'http://localhost:3000';
-
-// ── Helper HTTP ──────────────────────────────────────────────────
-
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = localStorage.getItem('access_token');
-  const res = await fetch(`${BASE}/${path.replace(/^\//, '')}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...init,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const msg = Array.isArray(body?.message)
-      ? body.message.join(', ')
-      : (body?.message ?? `Error HTTP ${res.status}`);
-    throw new Error(msg);
-  }
-
-  // 204 No Content (DELETE)
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
-}
+import { businessApi } from '../../../api/api';
 
 // ── Mapper: BoletoRaw → Ticket ───────────────────────────────────
-// Aplana las relaciones del backend a un objeto plano que usan los componentes.
-
 export function mapBoletoToTicket(raw: BoletoRaw): Ticket {
   return {
     id: raw.id,
     estado: raw.estado,
-    tarifa_pagada: raw.tarifa_pagada ?? raw.monto_pagado,
-    fecha_emision: raw.fecha_emision ?? raw.createdAt ?? new Date().toISOString(),
-    qr_code: raw.qr_code ?? raw.id,
+    monto_pagado: typeof raw.monto_pagado === 'string' ? parseFloat(raw.monto_pagado) : raw.monto_pagado,
+    fecha_emision: raw.fecha_emision ?? raw.createdAt ?? raw.hora_abordaje ?? new Date().toISOString(),
+    hora_abordaje: raw.hora_abordaje,
+    hora_descenso: raw.hora_descenso,
+    qr_code: raw.qr_validacion ?? raw.id,
 
-    // IDs para llamadas posteriores
-    ciudadano_id:    raw.ciudadano?.id,
+    ciudadano_id: raw.ciudadano?.id,
     programacion_id: raw.programacion?.id,
-    metodo_pago_id:  raw.metodoPagoCiudadano?.id,
+    metodo_pago_id: raw.metodoPagoCiudadano?.id,
 
-    // Datos para la UI
-    ruta_codigo:   raw.programacion?.ruta?.codigo,
-    ruta_nombre:   raw.programacion?.ruta?.nombre,
+    ruta_codigo: raw.programacion?.ruta?.codigo,
+    ruta_nombre: raw.programacion?.ruta?.nombre,
     origen_nombre: raw.paraderoAbordaje?.nombre,
     destino_nombre: raw.paraderoDescenso?.nombre ?? undefined,
+
+    programacion_estado: raw.programacion?.estado,
+    tolerancia_minutos: raw.programacion?.tolerancia_minutos,
   };
 }
 
-// ── Servicio público ─────────────────────────────────────────────
-
 export const ticketsService = {
-
-  /**
-   * Obtiene todos los boletos del ciudadano autenticado.
-   * El backend no tiene /mis-boletos, así que filtramos por ciudadano_id.
-   * Si ciudadanoId es undefined trae todos (rol admin).
-   */
   getMyTickets: async (ciudadanoId?: string): Promise<Ticket[]> => {
-    const raws = await http<BoletoRaw[]>('boletos');
+    // El backend extrae la info del JWT ahora, pero este endpoint findAll
+    // asume traer todo si somos admin. Mantenemos el filtro temporal.
+    const res = await businessApi.get<BoletoRaw[]>('/boletos');
+    const raws = res.data;
     const filtered = ciudadanoId
       ? raws.filter(b => b.ciudadano?.id === ciudadanoId)
       : raws;
@@ -81,32 +50,23 @@ export const ticketsService = {
       .sort((a, b) => new Date(b.fecha_emision).getTime() - new Date(a.fecha_emision).getTime());
   },
 
-  /**
-   * POST /boletos/comprar — endpoint estrella de HU-ENTR-2-003.
-   * El backend valida: cupo, saldo, genera QR y registra historial.
-   */
   buyTicket: async (dto: CreateBoletoDto): Promise<Ticket> => {
-    const raw = await http<BoletoRaw>('boletos/comprar', {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    });
-    return mapBoletoToTicket(raw);
+    const res = await businessApi.post<BoletoRaw>('/boletos/abordaje', dto);
+    return mapBoletoToTicket(res.data);
   },
 
-  /**
-   * PATCH /boletos/:id/cancelar
-   * Solo funciona si estado === 'ACTIVO' (validado en backend).
-   */
+  registerDescenso: async (boletoId: string, paraderoDescensoId: string) => {
+    const res = await businessApi.patch(`/boletos/${boletoId}/descenso`, { paraderoDescensoId });
+    return res.data;
+  },
+
   cancelTicket: async (id: string): Promise<Ticket> => {
-    const raw = await http<BoletoRaw>(`boletos/${id}/cancelar`, { method: 'PATCH' });
-    return mapBoletoToTicket(raw);
+    const res = await businessApi.patch<BoletoRaw>(`/boletos/${id}/cancelar`);
+    return mapBoletoToTicket(res.data);
   },
 
-  /**
-   * GET /boletos/:id
-   */
   getById: async (id: string): Promise<Ticket> => {
-    const raw = await http<BoletoRaw>(`boletos/${id}`);
-    return mapBoletoToTicket(raw);
+    const res = await businessApi.get<BoletoRaw>(`/boletos/${id}`);
+    return mapBoletoToTicket(res.data);
   },
 };

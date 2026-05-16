@@ -36,6 +36,7 @@ const NearbyStopsPage = lazy(() => import("../modules/stops/pages/NearbyStopsPag
 
 // --- Boletos (HU-003) ---
 const TicketsPage       = lazy(() => import("../modules/tickets/pages/TicketsPage"))
+const AbordajePage      = lazy(() => import("../modules/tickets/pages/AbordajePage"))
 const TicketSuccessPage = lazy(() => import("../modules/tickets/pages/TicketSuccessPage"))
 
 // --- Viajes (HU-004 + HU-005) ---
@@ -61,6 +62,7 @@ const CreateRoutePage  = lazy(() => import("../modules/admin/routes/pages/Create
 const AdminDriversPage = lazy(() => import("../modules/admin/drivers/pages/AdminDriversPage"))
 
 // --- Admin: Paraderos (HU-010) ---
+const AdminStopsPage = lazy(() => import("../modules/admin/stops/pages/AdminStopsPage"))
 const CreateStopPage = lazy(() => import("../modules/admin/stops/pages/CreateStopPage"))
 
 // --- Admin: Programaciones (HU-011) ---
@@ -164,6 +166,12 @@ export default function AppRouter() {
           } />
 
           {/* ---- Admin: Paraderos (HU-010) ---- */}
+          <Route path="/admin/paraderos" element={
+            <ProtectedRoute permission={{ module: MODULES.PARADEROS, action: 'leer' }}>
+              <SuspenseWrapper><AdminStopsPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           <Route path="/admin/paraderos/crear" element={
             <ProtectedRoute permission={{ module: MODULES.PARADEROS, action: 'escribir' }}>
               <SuspenseWrapper><CreateStopPage /></SuspenseWrapper>
@@ -245,7 +253,13 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
-          <Route path="/boletos/success" element={
+          <Route path="/abordaje" element={
+            <ProtectedRoute permission={{ module: MODULES.BOLETOS, action: 'leer' }}>
+              <SuspenseWrapper><AbordajePage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/boletos/exito" element={
             <ProtectedRoute permission={{ module: MODULES.BOLETOS, action: 'leer' }}>
               <SuspenseWrapper><TicketSuccessPage /></SuspenseWrapper>
             </ProtectedRoute>
