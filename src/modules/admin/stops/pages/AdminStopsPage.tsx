@@ -12,10 +12,8 @@ const AdminStopsPage = () => {
   useEffect(() => {
     stopsService.getAll()
       .then(setStops)
-      .finally(() => setIsLoadingStops(false));
+      .finally(() => setIsLoading(false));
   }, []);
-
-  const [isLoadingStops, setIsLoadingStops] = useState(true);
 
   return (
     <div style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -36,7 +34,7 @@ const AdminStopsPage = () => {
         </button>
       </div>
 
-      {isLoadingStops ? (
+      {isLoading ? (
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><Loader /></div>
       ) : (
         <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>

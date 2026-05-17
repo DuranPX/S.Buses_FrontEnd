@@ -13,7 +13,7 @@ export interface Stop {
 }
 
 export interface NearbyStop extends Stop {
-  distancia: number; // Distancia en km desde la ubicación actual
+  distancia: number; // Distancia en metros desde la ubicación actual
   rutas: string[];   // Nombres o códigos de las rutas que pasan por aquí
 }
 
