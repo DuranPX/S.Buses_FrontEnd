@@ -70,25 +70,19 @@ export const tripsService = {
     return ciudadano.id;
   },
 
-  // GET /boletos?ciudadano_id=xxx — historial de viajes completados
-  getHistory: async (authId: string): Promise<Trip[]> => {
-    const ciudadanoId = await tripsService.getCiudadanoId(authId);
-    const { data } = await businessApi.get(
-      `/boletos?ciudadano_id=${ciudadanoId}`
-    );
-    return data
-      .filter((b: any) => b.estado === 'Completado')
-      .map(adaptBoleto)
-      .sort(
-        (a: Trip, b: Trip) =>
-          new Date(b.fecha_descenso).getTime() -
-          new Date(a.fecha_descenso).getTime()
-      );
+  // Historial de viajes del ciudadano autenticado
+  getHistory: async (): Promise<Trip[]> => {
+    const { data } = await businessApi.get('/boletos/mis-viajes');
+    return data.map(adaptBoleto);
   },
 
   // GET /boletos/:id/detalle — detalle completo del viaje
   getTripDetail: async (id: string): Promise<Trip> => {
     const { data } = await businessApi.get(`/boletos/${id}/detalle`);
     return adaptBoleto(data);
+  },
+
+  finishTrip: async (_boletoId: string, _destinoId: string): Promise<Trip> => {
+    throw new Error('Funcionalidad pendiente de implementación (HU-004).');
   },
 };

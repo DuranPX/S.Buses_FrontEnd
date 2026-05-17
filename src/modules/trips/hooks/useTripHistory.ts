@@ -4,17 +4,17 @@ import { useAuth } from '../../../features/auth/hooks/useAuth'; // ← agregar
 import type { Trip } from '../types/trip.types';
 
 export const useTripHistory = () => {
-  const { user } = useAuth(); // ← para obtener el ciudadanoId
+  const { user } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
-    if (!user?.id) return; // ← esperar a que el usuario esté disponible
+    if (!user?.id) return;
     setIsLoading(true);
     setError(null);
     try {
-      const data = await tripsService.getHistory(user.id); // ← pasar el id
+      const data = await tripsService.getHistory();
       setTrips(data);
     } catch {
       setError('No se pudo cargar el historial de viajes.');
