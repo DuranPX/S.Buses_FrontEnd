@@ -22,7 +22,7 @@ export const StopCard = ({ stop, isSelected, onClick }: Props) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
         <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>{stop.nombre}</h4>
         <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 600, background: 'rgba(52,211,153,0.1)', padding: '0.1rem 0.4rem', borderRadius: '0.25rem' }}>
-          {stop.distancia} km
+          {stop.distancia} m
         </span>
       </div>
       

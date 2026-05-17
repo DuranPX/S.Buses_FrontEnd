@@ -22,6 +22,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ticketsService } from '../services/ticketsService';
 import { businessApi } from '../../../api/api';
+import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { useSocket } from '../../../websocket/hooks/useSocket';
+import { WS_EVENTS } from '../../../websocket/events';
 import type { CreateBoletoDto, Ticket } from '../types/ticket.types';
 
 
@@ -141,7 +144,7 @@ const StepBar = ({ current }: { current: number }) => (
 
 // ── Paso 1: Seleccionar programación ────────────────────────────
 
-const StepProgramacion = ({ onNext }: { onNext: (p: Programacion) => void }) => {
+const StepProgramacion = ({ onNext, isAdmin }: { onNext: (p: Programacion) => void, isAdmin?: boolean }) => {
     const [items, setItems] = useState<Programacion[]>([]);
     const [selected, setSelected] = useState<Programacion | null>(null);
     const [loading, setLoading] = useState(true);
@@ -156,6 +159,18 @@ const StepProgramacion = ({ onNext }: { onNext: (p: Programacion) => void }) => 
             .catch(e => setError(e?.response?.data?.message || e.message))
             .finally(() => setLoading(false));
     }, []);
+
+    // Escuchar actualizaciones de capacidad en tiempo real
+    useSocket<{ programacionId: string; pasajeros_actuales: number }>(
+        WS_EVENTS.BUS_CAPACITY_UPDATED,
+        (data) => {
+            setItems(prev => prev.map(p => 
+                p.id === data.programacionId 
+                    ? { ...p, pasajeros_actuales: data.pasajeros_actuales } 
+                    : p
+            ));
+        }
+    );
 
     const lleno = (p: Programacion) => p.pasajeros_actuales >= p.capacidad_maxima;
 
@@ -177,7 +192,7 @@ const StepProgramacion = ({ onNext }: { onNext: (p: Programacion) => void }) => 
                 {items.map(p => {
                     const full = lleno(p);
                     return (
-                        <button key={p.id} type="button" style={cls.selectItem(selected?.id === p.id, full)} onClick={() => !full && setSelected(p)}>
+                        <button key={p.id} type="button" style={cls.selectItem(selected?.id === p.id, full && !isAdmin)} onClick={() => (!full || isAdmin) && setSelected(p)}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
                                     <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
@@ -534,6 +549,9 @@ const StepExito = ({
 
 const AbordajePage = () => {
     const navigate = useNavigate();
+    const { activeRole } = useAuth();
+    const isAdmin = activeRole?.name === 'Admin' || activeRole?.name === 'ADMIN';
+
     const [step, setStep] = useState<Step>('programacion');
     const [programacion, setProgramacion] = useState<Programacion | null>(null);
     const [metodo, setMetodo] = useState<MetodoPagoCiudadano | null>(null);
@@ -555,15 +573,14 @@ const AbordajePage = () => {
             paraderoId: paradero.id,
         };
 
-        // 🔍 DIAGNÓSTICO: ver exactamente qué IDs se envían al backend
-        console.log('[AbordajePage] DTO enviado:', dto);
-        console.log('[AbordajePage] Programacion raw:', programacion);
-        console.log('[AbordajePage] Metodo raw:', metodo);
-        console.log('[AbordajePage] Paradero raw:', paradero);
-
         try {
             const result = await ticketsService.buyTicket(dto);
             setTicket(result);
+            
+            // ✅ PERSISTENCIA: Guardamos el ID del boleto activo
+            localStorage.setItem('active_ticket_id', result.id);
+            localStorage.setItem('active_ticket_ruta', result.ruta_codigo || '');
+            
             setStep('exito');
         } catch (e: any) {
             // Manejar específicamente HTTP 402 Payment Required u otros errores de la API
@@ -625,7 +642,7 @@ const AbordajePage = () => {
                 {/* Panel del paso */}
                 <div style={cls.card}>
                     {step === 'programacion' && (
-                        <StepProgramacion onNext={p => { setProgramacion(p); setStep('metodo_pago'); }} />
+                        <StepProgramacion onNext={p => { setProgramacion(p); setStep('metodo_pago'); }} isAdmin={isAdmin} />
                     )}
                     {step === 'metodo_pago' && programacion && (
                         <StepMetodoPago

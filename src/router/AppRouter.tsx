@@ -73,6 +73,10 @@ const CreateSchedulePage  = lazy(() => import("../modules/admin/schedules/pages/
 const BusesPage      = lazy(() => import("../modules/admin/buses/pages/BusesPage"))
 const CreateBusPage  = lazy(() => import("../modules/admin/buses/pages/CreateBusPage"))
 
+// --- Admin: Empresas ---
+const EmpresasPage      = lazy(() => import("../modules/admin/empresas/pages/EmpresasPage"))
+const CreateEmpresaPage = lazy(() => import("../modules/admin/empresas/pages/CreateEmpresaPage"))
+
 // --- Cartera (HU-013) ---
 const RechargePage = lazy(() => import("../modules/wallet/pages/RechargePage"))
 const PaymentPage  = lazy(() => import("../modules/wallet/pages/PaymentPage"))
@@ -211,8 +215,21 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          {/* ---- Admin: Empresas ---- */}
+          <Route path="/admin/empresas" element={
+            <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'leer' }}>
+              <SuspenseWrapper><EmpresasPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/empresas/crear" element={
+            <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'escribir' }}>
+              <SuspenseWrapper><CreateEmpresaPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           {/* ---- Placeholders admin sin implementación aún ---- */}
-          {[MODULES.TURNOS, MODULES.CLIENTES, MODULES.EMPRESAS].map(modulo => (
+          {[MODULES.TURNOS, MODULES.CLIENTES].map(modulo => (
             <Route key={`admin-${modulo}`} path={`/admin/${modulo}`} element={
               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
                 <GenericModulePlaceholder moduleName={modulo} />

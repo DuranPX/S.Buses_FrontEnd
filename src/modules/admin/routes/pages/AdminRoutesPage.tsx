@@ -5,7 +5,7 @@ import { Loader } from '../../../../shared/components/ui/Loader';
 
 const AdminRoutesPage = () => {
   const navigate = useNavigate();
-  const { routes, isLoading, error, refetch } = useRoutes();
+  const { routes, isLoading, refetch } = useRoutes();
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`¿Estás seguro de eliminar la ruta "${name}"?`)) return;
