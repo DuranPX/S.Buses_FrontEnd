@@ -21,6 +21,7 @@ import CompleteProfile from "../features/auth/pages/CompleteProfile"
 import ProfilePage from "../features/profile/pages/ProfilePage"
 import { Loader } from "../shared/components/ui/Loader"
 
+
 // ================================================================
 // LAZY IMPORTS — Módulos de Negocio (Fase 2-6)
 // Se cargan solo cuando el usuario navega a esa ruta.
@@ -53,6 +54,7 @@ const StartShiftPage  = lazy(() => import("../modules/drivers/pages/StartShiftPa
 const CreateIncidentPage    = lazy(() => import("../modules/incidents/pages/CreateIncidentPage"))
 const IncidentsMonitorPage  = lazy(() => import("../modules/incidents/pages/IncidentsMonitorPage"))
 const IncidentsHistoryPage  = lazy(() => import("../modules/incidents/pages/IncidentsHistoryPage"))
+const IncidentsByBusPage  = lazy(() => import("../modules/incidents/pages/IncidentsByBusPage"))
 
 // --- Admin: Rutas (HU-009) ---
 const AdminRoutesPage  = lazy(() => import("../modules/admin/routes/pages/AdminRoutesPage"))
@@ -216,6 +218,7 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+<<<<<<< HEAD
           {/* ---- Admin: Empresas ---- */}
           <Route path="/admin/empresas" element={
             <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'leer' }}>
@@ -226,6 +229,12 @@ export default function AppRouter() {
           <Route path="/admin/empresas/crear" element={
             <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'escribir' }}>
               <SuspenseWrapper><CreateEmpresaPage /></SuspenseWrapper>
+=======
+          {/* Incidentes por bus */}
+          <Route path="/admin/buses/incidencias/:id" element={
+            <ProtectedRoute permission={{ module: MODULES.INCIDENTES, action: 'leer' }}>
+              <SuspenseWrapper><IncidentsByBusPage /></SuspenseWrapper>
+>>>>>>> b2de9e4 (Resolver conflictos con main)
             </ProtectedRoute>
           } />
 

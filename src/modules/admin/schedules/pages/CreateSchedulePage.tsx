@@ -67,15 +67,23 @@ const CreateSchedulePage = () => {
 
   return (
     <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.25rem', color: '#f8fafc' }}>
-            Asignar Programación
+            Nueva Programación
           </h1>
           <p style={{ color: '#94a3b8', margin: 0 }}>
             Conecta una ruta con un bus en un horario específico.
           </p>
         </div>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+        >
+          ← Volver
+        </button>
       </div>
 
       <form onSubmit={handleSave} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1rem', padding: '2rem' }}>
@@ -105,6 +113,11 @@ const CreateSchedulePage = () => {
           >
             {buses.map(b => <option key={b.id} value={b.id}>{b.placa} (Cap: {b.capacidad_total})</option>)}
           </select>
+          {buses.length === 0 && (
+            <p style={{ color: '#f59e0b', fontSize: '0.8rem', marginTop: '0.4rem' }}>
+              No hay buses operativos disponibles
+            </p>
+          )}
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
@@ -112,6 +125,7 @@ const CreateSchedulePage = () => {
           <input 
             type="date" 
             value={formData.fecha}
+            min={new Date().toISOString().split('T')[0]}
             onChange={e => setFormData({ ...formData, fecha: e.target.value })}
             style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} 
           />
@@ -132,6 +146,8 @@ const CreateSchedulePage = () => {
             <input 
               type="number" 
               value={formData.tolerancia_minutos}
+              min={0}
+              max={30}
               onChange={e => setFormData({ ...formData, tolerancia_minutos: parseInt(e.target.value) })}
               style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} 
             />
@@ -156,7 +172,7 @@ const CreateSchedulePage = () => {
           disabled={isProcessing}
           style={{ width: '100%', background: '#6366f1', color: 'white', padding: '1rem', borderRadius: '0.5rem', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1.1rem', opacity: isProcessing ? 0.7 : 1 }}
         >
-          {isProcessing ? 'Guardando...' : 'Crear Programación'}
+          {isProcessing ? 'Creando programación...' : 'Crear Programación'}
         </button>
       </form>
     </div>
