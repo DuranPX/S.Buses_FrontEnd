@@ -1,22 +1,49 @@
-// ================================================================
-// TIPOS — Módulo Incidentes (HU-007, HU-008)
-// ================================================================
+// src/modules/incidents/types/incident.types.ts
 
-export interface Incident {
+export type TipoIncidente = 'Mecánico' | 'Accidente' | 'Retraso' | 'Otro';
+export type GravedadIncidente = 'Bajo' | 'Medio' | 'Alto' | 'Crítico';
+export type EstadoIncidente = 'Pendiente' | 'En_Revision' | 'Resuelto';
+
+export interface Incidente {
   id: string;
-  reportador_id: string; // ciudadano o conductor
-  bus_id: string | null;
-  ruta_id: string | null;
-  tipo: 'Accidente' | 'Falla_Mecanica' | 'Comportamiento' | 'Retraso' | 'Otro';
-  descripcion: string;
-  latitud: number | null;
-  longitud: number | null;
-  estado: 'Reportado' | 'En_Revision' | 'Resuelto';
-  evidencia_url: string | null; // URL de la foto subida
+  tipo: TipoIncidente;
+  gravedad: GravedadIncidente;
+  descripcion?: string;
+  seguimiento_log?: string;
+  estado: EstadoIncidente;
+  latitud: number;
+  longitud: number;
   fecha_reporte: string;
-  
-  // Expandidos para UI
-  reportador_nombre?: string;
-  ruta_codigo?: string;
-  bus_placa?: string;
+  incidenteBuses?: IncidenteBus[];
 }
+
+export interface IncidenteBus {
+  id: string;
+  incidente: Incidente;
+  bus: {
+    id: string;
+    placa: string;
+    modelo: string;
+  };
+  fotos?: Foto[];
+}
+
+export interface Foto {
+  id: string;
+  url: string;
+}
+
+export interface CreateIncidenteDto {
+  tipo: TipoIncidente;
+  gravedad: GravedadIncidente;
+  descripcion?: string;
+  latitud: number;
+  longitud: number;
+}
+
+export interface CreateIncidenteBusDto {
+  incidente_id: string;
+  bus_id: string;
+}
+
+export type Incident = Incidente;
