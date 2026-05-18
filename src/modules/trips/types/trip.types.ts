@@ -3,6 +3,24 @@
 // Representan boletos completados (viajes)
 // ================================================================
 
+export interface TripParadero {
+  id: string;
+  nombre: string;
+  latitud: number;
+  longitud: number;
+}
+
+export interface TripConductor {
+  id: string;
+  nombre: string;
+  licencia: string;
+}
+
+export interface TripBus {
+  id: string;
+  placa: string;
+  modelo: string;
+}
 export interface Trip {
   id: string; // ID del boleto
   ruta_codigo: string;
@@ -14,4 +32,8 @@ export interface Trip {
   fecha_descenso: string;
   duracion_minutos: number;
   distancia_km?: number;
+  paraderoAbordaje?: TripParadero;
+  paraderoDescenso?: TripParadero;
+  bus?: TripBus;
+  conductor?: TripConductor;
 }

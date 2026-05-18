@@ -15,9 +15,11 @@ export interface Empresa {
 
 export interface Turno {
   id: string;
-  nombre?: string;
-  hora_inicio?: string;
-  hora_fin?: string;
+  estado?: string;
+  fecha_inicio_programada?: string;
+  fecha_fin_programada?: string;
+  conductor?: { id: string; persona?: { firstName: string; lastName: string } };
+  bus?: { id: string; placa?: string };
 }
 
 export interface Conductor {
@@ -46,7 +48,7 @@ export const driversService = {
    */
   getAllDrivers: async (): Promise<Conductor[]> => {
     const res = await businessApi.get<Conductor[]>('/conductor');
-    return res.data;
+    return Array.isArray(res.data) ? res.data : [];
   },
 
   /**
@@ -55,7 +57,7 @@ export const driversService = {
    */
   getAllEmpresas: async (): Promise<Empresa[]> => {
     const res = await businessApi.get<Empresa[]>('/empresa');
-    return res.data;
+    return Array.isArray(res.data) ? res.data : [];
   },
 
   /**
@@ -64,7 +66,7 @@ export const driversService = {
    */
   getAllTurnos: async (): Promise<Turno[]> => {
     const res = await businessApi.get<Turno[]>('/turno');
-    return res.data;
+    return Array.isArray(res.data) ? res.data : [];
   },
 
   /**

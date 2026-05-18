@@ -55,13 +55,13 @@ const AdminDriversPage = () => {
   };
 
   const handleToggleEmpresa = (empresaId: string) => {
-    setSelectedEmpresasIds(prev => 
+    setSelectedEmpresasIds(prev =>
       prev.includes(empresaId) ? prev.filter(id => id !== empresaId) : [...prev, empresaId]
     );
   };
 
   const handleToggleTurno = (turnoId: string) => {
-    setSelectedTurnosIds(prev => 
+    setSelectedTurnosIds(prev =>
       prev.includes(turnoId) ? prev.filter(id => id !== turnoId) : [...prev, turnoId]
     );
   };
@@ -117,7 +117,7 @@ const AdminDriversPage = () => {
             Administra los conductores registrados, vincula sus empresas y asigna turnos operativos.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             if (drivers.length > 0) {
               handleOpenAssociateModal(drivers[0]);
@@ -145,13 +145,13 @@ const AdminDriversPage = () => {
 
       {/* FILTROS RÁPIDOS */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-        <button 
+        <button
           onClick={() => setFilterTab('ALL')}
           style={{ padding: '0.6rem 1.5rem', borderRadius: '0.5rem', fontWeight: 600, border: 'none', cursor: 'pointer', background: filterTab === 'ALL' ? '#6366f1' : 'rgba(255,255,255,0.05)', color: filterTab === 'ALL' ? 'white' : '#94a3b8', transition: 'all 0.2s' }}
         >
           Todos los Conductores ({drivers.length})
         </button>
-        <button 
+        <button
           onClick={() => setFilterTab('PENDING')}
           style={{ padding: '0.6rem 1.5rem', borderRadius: '0.5rem', fontWeight: 600, border: 'none', cursor: 'pointer', background: filterTab === 'PENDING' ? '#10b981' : 'rgba(255,255,255,0.05)', color: filterTab === 'PENDING' ? 'white' : '#94a3b8', transition: 'all 0.2s' }}
         >
@@ -223,7 +223,12 @@ const AdminDriversPage = () => {
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                           {driver.turnos!.map(t => (
                             <span key={t.id} style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)', padding: '0.2rem 0.6rem', borderRadius: '0.35rem', fontSize: '0.75rem' }}>
-                              {t.nombre || 'Turno'} ({t.hora_inicio || ''} - {t.hora_fin || ''})
+                              {t.fecha_inicio_programada
+                                ? new Date(t.fecha_inicio_programada).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                                : 'Turno'}{' → '}
+                              {t.fecha_fin_programada
+                                ? new Date(t.fecha_fin_programada).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                                : ''}
                             </span>
                           ))}
                         </div>
@@ -232,7 +237,7 @@ const AdminDriversPage = () => {
                       )}
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem' }}>
-                      <span style={{ 
+                      <span style={{
                         padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700,
                         background: driver.activo ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
                         color: driver.activo ? '#10b981' : '#ef4444',
@@ -242,7 +247,7 @@ const AdminDriversPage = () => {
                       </span>
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem', textAlign: 'center' }}>
-                      <button 
+                      <button
                         onClick={() => handleOpenAssociateModal(driver)}
                         style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid #6366f1', color: '#a5b4fc', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s' }}
                       >
@@ -276,7 +281,7 @@ const AdminDriversPage = () => {
               {/* SELECTOR DE CONDUCTOR */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: 600 }}>Conductor Seleccionado</label>
-                <select 
+                <select
                   value={selectedDriverId} onChange={e => setSelectedDriverId(e.target.value)}
                   style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem', fontWeight: 600 }}
                 >
@@ -301,7 +306,7 @@ const AdminDriversPage = () => {
                   {empresas.map(emp => {
                     const isSelected = selectedEmpresasIds.includes(emp.id);
                     return (
-                      <div 
+                      <div
                         key={emp.id} onClick={() => handleToggleEmpresa(emp.id)}
                         style={{ padding: '0.8rem 1rem', borderRadius: '0.5rem', border: `1px solid ${isSelected ? '#34d399' : 'rgba(255,255,255,0.1)'}`, background: isSelected ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
                       >
@@ -322,13 +327,20 @@ const AdminDriversPage = () => {
                   {turnos.map(turno => {
                     const isSelected = selectedTurnosIds.includes(turno.id);
                     return (
-                      <div 
+                      <div
                         key={turno.id} onClick={() => handleToggleTurno(turno.id)}
                         style={{ padding: '0.8rem 1rem', borderRadius: '0.5rem', border: `1px solid ${isSelected ? '#6366f1' : 'rgba(255,255,255,0.1)'}`, background: isSelected ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
                       >
                         <input type="checkbox" checked={isSelected} readOnly style={{ accentColor: '#6366f1', cursor: 'pointer' }} />
                         <span style={{ color: isSelected ? '#a5b4fc' : '#cbd5e1', fontWeight: isSelected ? 700 : 500, fontSize: '0.85rem' }}>
-                          {turno.nombre || 'Turno'} ({turno.hora_inicio || ''} - {turno.hora_fin || ''})
+                          {turno.fecha_inicio_programada
+                            ? new Date(turno.fecha_inicio_programada).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                            : '—'}{' → '}
+                          {turno.fecha_fin_programada
+                            ? new Date(turno.fecha_fin_programada).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                            : '—'}
+                          {turno.bus?.placa ? ` | Bus: ${turno.bus.placa}` : ''}
+                          {turno.estado ? ` [${turno.estado}]` : ''}
                         </span>
                       </div>
                     );
@@ -338,22 +350,22 @@ const AdminDriversPage = () => {
 
               {/* ESTADO ACTIVO */}
               <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <input 
+                <input
                   type="checkbox" id="active-check" checked={isActive} onChange={e => setIsActive(e.target.checked)}
-                  style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }} 
+                  style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
                 />
                 <label htmlFor="active-check" style={{ color: '#f1f5f9', fontWeight: 600, cursor: 'pointer' }}>Conductor Operativo / Activo</label>
               </div>
 
               {/* BOTONES */}
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
+                <button
                   type="button" onClick={() => setIsModalOpen(false)} disabled={isSaving}
                   style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   type="submit" disabled={isSaving}
                   style={{ flex: 2, padding: '1rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1.05rem', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', opacity: isSaving ? 0.7 : 1 }}
                 >
