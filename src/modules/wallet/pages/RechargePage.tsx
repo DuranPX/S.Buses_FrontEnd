@@ -5,7 +5,7 @@ import { walletService, type MetodoPagoCatalogo } from '../services/walletServic
 
 const RechargePage = () => {
   const navigate = useNavigate();
-  const { billeteras, billeteraPrincipal, saldoActual, isLoadingWallet, recargar, vincularMetodo } = useWallet();
+  const { billeteras, billeteraPrincipal, isLoadingWallet, recargar, vincularMetodo } = useWallet();
   const [amount, setAmount] = useState<number>(20000);
   const [catalogo, setCatalogo] = useState<MetodoPagoCatalogo[]>([]);
   const [isLoadingCatalogo, setIsLoadingCatalogo] = useState(true);
