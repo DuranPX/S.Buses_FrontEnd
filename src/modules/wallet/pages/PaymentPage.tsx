@@ -1,44 +1,61 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useWallet } from '../context/WalletContext';
+import { loadEpaycoScript } from '../../../shared/utils/epayco';
 
 const PaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { billeteraPrincipal } = useWallet();
   const amount = location.state?.amount || 0;
   const [isProcessing, setIsProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!amount) {
     navigate('/cartera/recarga', { replace: true });
     return null;
   }
 
-  const handlePay = () => {
+  const handlePay = async () => {
+    const billeteraId = billeteraPrincipal?.id || 'billetera-uuid-1234';
     setIsProcessing(true);
-    // Simular el tiempo de respuesta de ePayco
-    setTimeout(() => {
-      setIsProcessing(false);
-      setSuccess(true);
-    }, 2000);
-  };
+    setError(null);
 
-  if (success) {
-    return (
-      <div style={{ padding: '2rem', maxWidth: '500px', margin: '2rem auto', textAlign: 'center', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '1rem' }}>
-        <span style={{ fontSize: '4rem', display: 'block', marginBottom: '1rem' }}>🎉</span>
-        <h2 style={{ color: '#10b981', margin: '0 0 1rem' }}>¡Recarga Exitosa!</h2>
-        <p style={{ color: '#e2e8f0', marginBottom: '2rem' }}>
-          Tu saldo ha sido actualizado con <strong>${amount.toLocaleString('es-CO')}</strong>.
-        </p>
-        <button 
-          onClick={() => navigate('/dashboard')}
-          style={{ background: '#10b981', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-        >
-          Volver al Inicio
-        </button>
-      </div>
-    );
-  }
+    try {
+      const ePayco = await loadEpaycoScript();
+      const handler = ePayco.checkout.configure({
+        key: import.meta.env.VITE_EPAYCO_PUBLIC_KEY || '45b960805ced5c27ce34b1600b4b9f54', // Llave pública de prueba ePayco
+        test: import.meta.env.VITE_EPAYCO_TEST !== 'false' // true para pruebas, false para producción
+      });
+
+      const numFactura = `REC-${billeteraId}-${crypto.randomUUID()}`;
+      const appUrl = import.meta.env.VITE_APP_URL ;
+      const apiUrl = import.meta.env.VITE_API_URL ;
+
+      const data = {
+        name: "Recarga Billetera de Transporte",
+        description: `Recarga de saldo virtual para Billetera #${billeteraId}`,
+        invoice: numFactura,
+        currency: "cop",
+        amount: amount.toString(),
+        tax_base: "0",
+        tax: "0",
+        country: "co",
+        lang: "es",
+        extra1: billeteraId,
+        extra2: "RECARGA",
+        external: "false",
+        response: `${appUrl}/admin/pagos/respuesta`,
+        confirmation: `${apiUrl}/metodo-pago-ciudadano/epayco-webhook`
+      };
+
+      handler.open(data);
+      setIsProcessing(false);
+    } catch (err: any) {
+      setError(err.message || 'Error al inicializar la pasarela de ePayco.');
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto', height: '100%' }}>
@@ -52,7 +69,7 @@ const PaymentPage = () => {
       <div style={{ background: 'white', borderRadius: '1rem', padding: '2rem', color: '#0f172a' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h2 style={{ margin: '0 0 0.5rem' }}>Pasarela de Pagos Segura</h2>
-          <p style={{ color: '#64748b', margin: 0 }}>Mock de integración con ePayco</p>
+          <p style={{ color: '#64748b', margin: 0 }}>Integración oficial con ePayco Checkout</p>
         </div>
 
         <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '2rem', border: '1px solid #e2e8f0' }}>
@@ -66,14 +83,20 @@ const PaymentPage = () => {
           </div>
         </div>
 
+        {error && (
+          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #f87171', color: '#ef4444', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
+
         <button 
           onClick={handlePay} disabled={isProcessing}
           style={{ width: '100%', background: '#000', color: 'white', padding: '1.2rem', borderRadius: '0.5rem', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1.1rem', opacity: isProcessing ? 0.8 : 1 }}
         >
-          {isProcessing ? 'Procesando Tarjeta...' : 'Pagar con ePayco'}
+          {isProcessing ? 'Abriendo ePayco...' : 'Pagar con ePayco'}
         </button>
         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8', marginTop: '1rem' }}>
-          Transacción 100% simulada. No ingrese datos reales.
+          Serás redirigido al widget seguro de ePayco para completar tu pago.
         </p>
       </div>
     </div>

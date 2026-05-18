@@ -34,6 +34,8 @@ export interface User {
   photo?: string;
   roles: Role[];
   authExternals?: AuthExternal[];
+  ciudadanoId?: string;
+  conductorId?: string;
 }
 
 interface AuthContextType {
@@ -97,6 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const phone = explicitUser?.phone || user?.phone || "";
     const address = explicitUser?.address || user?.address || "";
     const authExternals = explicitUser?.authExternals || user?.authExternals || [];
+    const ciudadanoId = explicitUser?.ciudadanoId || user?.ciudadanoId;
+    const conductorId = explicitUser?.conductorId || user?.conductorId;
     
     const tokenType = payload?.token_type;
 
@@ -112,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         permisos: []
       }));
 
-      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: draftRoles, authExternals });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: draftRoles, authExternals, ciudadanoId, conductorId });
       setActiveRole(null);
 
       if (rawRoles.length === 1) {
@@ -120,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const result = await selectRole(rawRoles[0]);
           if (result && result.token && result.role) {
             // Pasamos el usuario actual completo a la siguiente fase para no perder datos parciales
-            return await syncSession(result.token, email, result.role, { id: userId, name, lastName, email, phone, address, photo, authExternals });
+            return await syncSession(result.token, email, result.role, { id: userId, name, lastName, email, phone, address, photo, authExternals, ciudadanoId, conductorId });
           }
         } catch (error) {
           handleSetActiveRole(draftRoles[0]);
@@ -145,10 +149,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         permisos: []
       };
 
-      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals, ciudadanoId, conductorId });
       handleSetActiveRole(roleObj);
       // Sincronizar en background con ms-business (solo con token definitivo)
-      syncBusinessUser().catch(() => {});
+      syncBusinessUser().then((data) => {
+        if (data && (data.ciudadanoId || data.conductorId)) {
+          setUser(prev => prev ? { ...prev, ciudadanoId: data.ciudadanoId, conductorId: data.conductorId } : null);
+        }
+      }).catch(() => {});
     } else {
       // Compatibility fallback
       const rawRoles = payload?.roles || ["USER"];

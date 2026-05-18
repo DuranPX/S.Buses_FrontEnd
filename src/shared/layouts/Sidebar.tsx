@@ -8,7 +8,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const { canRead } = useAuthorization();
+  const { canRead, activeRole } = useAuthorization();
 
   const GROUPS = [
     // ---- Administración del sistema ----
@@ -96,6 +96,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </NavLink>
 
         {GROUPS.map((group, groupIdx) => {
+          if (group.label === 'Administración' && activeRole?.name !== 'Admin' && activeRole?.name !== 'ADMIN') {
+            return null;
+          }
           const visibleItems = group.items.filter(item => canRead(item.module));
           if (visibleItems.length === 0) return null;
 
