@@ -61,6 +61,10 @@ const CreateRoutePage  = lazy(() => import("../modules/admin/routes/pages/Create
 // --- Admin: Conductores ---
 const AdminDriversPage = lazy(() => import("../modules/admin/drivers/pages/AdminDriversPage"))
 
+// --- Admin: Turnos ---
+const AdminTurnosPage = lazy(() => import("../modules/admin/turnos/pages/AdminTurnosPage"))
+const CreateTurnoPage = lazy(() => import("../modules/admin/turnos/pages/CreateTurnoPage"))
+
 // --- Admin: Paraderos (HU-010) ---
 const AdminStopsPage = lazy(() => import("../modules/admin/stops/pages/AdminStopsPage"))
 const CreateStopPage = lazy(() => import("../modules/admin/stops/pages/CreateStopPage"))
@@ -72,6 +76,10 @@ const CreateSchedulePage  = lazy(() => import("../modules/admin/schedules/pages/
 // --- Admin: Buses (HU-012) ---
 const BusesPage      = lazy(() => import("../modules/admin/buses/pages/BusesPage"))
 const CreateBusPage  = lazy(() => import("../modules/admin/buses/pages/CreateBusPage"))
+
+// --- Admin: Empresas ---
+const EmpresasPage      = lazy(() => import("../modules/admin/empresas/pages/EmpresasPage"))
+const CreateEmpresaPage = lazy(() => import("../modules/admin/empresas/pages/CreateEmpresaPage"))
 
 // --- Cartera (HU-013) ---
 const RechargePage = lazy(() => import("../modules/wallet/pages/RechargePage"))
@@ -165,6 +173,19 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          {/* ---- Admin: Turnos (HU-006) ---- */}
+          <Route path="/admin/turnos" element={
+            <ProtectedRoute permission={{ module: MODULES.TURNOS, action: 'leer' }}>
+              <SuspenseWrapper><AdminTurnosPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/turnos/crear" element={
+            <ProtectedRoute permission={{ module: MODULES.TURNOS, action: 'escribir' }}>
+              <SuspenseWrapper><CreateTurnoPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           {/* ---- Admin: Paraderos (HU-010) ---- */}
           <Route path="/admin/paraderos" element={
             <ProtectedRoute permission={{ module: MODULES.PARADEROS, action: 'leer' }}>
@@ -211,8 +232,21 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          {/* ---- Admin: Empresas ---- */}
+          <Route path="/admin/empresas" element={
+            <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'leer' }}>
+              <SuspenseWrapper><EmpresasPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/empresas/crear" element={
+            <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'escribir' }}>
+              <SuspenseWrapper><CreateEmpresaPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           {/* ---- Placeholders admin sin implementación aún ---- */}
-          {[MODULES.TURNOS, MODULES.CLIENTES, MODULES.EMPRESAS].map(modulo => (
+          {[MODULES.CLIENTES].map(modulo => (
             <Route key={`admin-${modulo}`} path={`/admin/${modulo}`} element={
               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
                 <GenericModulePlaceholder moduleName={modulo} />

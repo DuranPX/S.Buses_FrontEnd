@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { tripsService } from '../services/tripsService'; // ← nombre actualizado
-import type { Trip } from '../types/trip.types';
+import { ticketsService } from '../../tickets/services/ticketsService';
 
 export const useTripFinish = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const finishTrip = async (boletoId: string, destinoId: string): Promise<Trip | null> => {
+  const finishTrip = async (boletoId: string, destinoId: string): Promise<any | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      // TODO: conectar al backend real cuando se implemente HU-004
-      // const trip = await tripsService.finishTrip(boletoId, destinoId);
-      throw new Error('Funcionalidad pendiente de implementación.');
+      const trip = await ticketsService.registerDescenso(boletoId, destinoId);
+      
+      // LIMPIEZA: Eliminamos el boleto activo de la persistencia
+      localStorage.removeItem('active_ticket_id');
+      localStorage.removeItem('active_ticket_ruta');
+      
+      return trip;
     } catch (err: any) {
       setError(err.message || 'Error al finalizar el viaje.');
       return null;

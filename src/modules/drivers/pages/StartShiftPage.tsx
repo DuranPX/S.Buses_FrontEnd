@@ -11,7 +11,7 @@ const StartShiftPage = () => {
 
   useEffect(() => {
     // Si ya tiene un turno en curso, redirigir al dashboard de turno
-    if (shift?.estado === 'En_Curso') {
+    if (shift?.estado === 'EN_CURSO') {
       navigate('/conductor/turno', { replace: true });
     }
   }, [shift, navigate]);

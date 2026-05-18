@@ -10,7 +10,7 @@ const DriverShiftPage = () => {
 
   useEffect(() => {
     // Si no tiene turno en curso, redirigir a iniciar
-    if (!isLoading && shift?.estado !== 'En_Curso') {
+    if (!isLoading && shift?.estado !== 'EN_CURSO') {
       navigate('/conductor/turno/iniciar', { replace: true });
     }
   }, [shift, isLoading, navigate]);
@@ -19,7 +19,7 @@ const DriverShiftPage = () => {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><Loader /></div>;
   }
 
-  if (!shift || shift.estado !== 'En_Curso') return null;
+  if (!shift || shift.estado !== 'EN_CURSO') return null;
 
   const tInicio = new Date(shift.fecha_inicio_real || shift.fecha_inicio_programada).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 

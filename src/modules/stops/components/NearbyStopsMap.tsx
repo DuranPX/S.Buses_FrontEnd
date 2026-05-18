@@ -50,7 +50,7 @@ export const NearbyStopsMap = ({ stops, location, onStopClick }: Props) => {
             <Popup>
               <div style={{ color: '#0f172a' }}>
                 <strong style={{ display: 'block', fontSize: '1rem' }}>{stop.nombre}</strong>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{stop.distancia} km de ti</span>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{stop.distancia} m de ti</span>
               </div>
             </Popup>
           </Marker>

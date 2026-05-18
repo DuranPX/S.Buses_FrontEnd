@@ -13,11 +13,14 @@ const FinishTripPage = () => {
   const { stops } = useNearbyStops(location);
   const { finishTrip, isLoading: finishing, error } = useTripFinish();
 
-  const [selectedTicketId, setSelectedTicketId] = useState<string>('');
+  const [selectedTicketId, setSelectedTicketId] = useState<string>(localStorage.getItem('active_ticket_id') || '');
   const [selectedStopId, setSelectedStopId] = useState<string>('');
 
   useEffect(() => {
-    if (tickets.length > 0 && !selectedTicketId) setSelectedTicketId(tickets[0].id);
+    // Si ya tenemos uno persistido, intentamos usarlo. Si no, tomamos el primero disponible.
+    if (!selectedTicketId && tickets.length > 0) {
+      setSelectedTicketId(tickets[0].id);
+    }
   }, [tickets, selectedTicketId]);
 
   useEffect(() => {

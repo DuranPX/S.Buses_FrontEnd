@@ -30,6 +30,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.PARADEROS,      path: '/paradero',                 label: 'Paraderos Cercanos' },
         { module: MODULES.BUSES,          path: '/admin/buses',              label: 'Buses'          },
         { module: MODULES.CONDUCTORES,    path: '/admin/conductores',        label: 'Conductores'    },
+        { module: MODULES.TURNOS,         path: '/admin/turnos',             label: 'Turnos'         },
         { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones',     label: 'Programaciones' },
         { module: MODULES.INCIDENTES,     path: '/admin/incidentes',         label: 'Monitor de Incidentes' },
       ]

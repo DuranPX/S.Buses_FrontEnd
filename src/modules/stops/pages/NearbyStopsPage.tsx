@@ -7,7 +7,7 @@ import { Loader } from '../../../shared/components/ui/Loader';
 
 const NearbyStopsPage = () => {
   const { location, error: geoError, isLoading: loadingGeo } = useGeolocation();
-  const { stops, isLoading: loadingStops, error: stopsError } = useNearbyStops(location);
+  const { stops, loading: loadingStops, error: stopsError } = useNearbyStops(location);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
 
   // Seleccionar el primer paradero por defecto si hay paraderos y no hay ninguno seleccionado
@@ -41,7 +41,7 @@ const NearbyStopsPage = () => {
 
       {error && (
         <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-          {error}
+          {error instanceof Error ? error.message : error}
         </div>
       )}
 

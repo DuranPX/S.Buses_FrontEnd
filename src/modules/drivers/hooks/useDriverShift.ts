@@ -43,8 +43,8 @@ export const useDriverShift = () => {
   useEffect(() => { fetchShift(); }, [fetchShift]);
 
   // Escuchar evento WebSocket cuando el turno se inicia
-  useSocket(WS_EVENTS.SHIFT_STARTED, (data: any) => {
-    if (data?.turno) setShift(adaptTurno(data.turno));
+  useSocket(WS_EVENTS.SHIFT_STARTED, (_data: any) => {
+      fetchShift();
   });
 
   const startShift = async (condition: BusCondition) => {
