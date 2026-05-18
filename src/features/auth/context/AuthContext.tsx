@@ -2,6 +2,78 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { logout as logoutService, selectRole, syncBusinessUser } from "../services/auth.service";
 import { useAuthFlow } from "./AuthFlowContext";
+import { businessApi } from "../../../api/api";
+
+const DriverLicenseModal = ({ personaId, onSuccess, onClose }: { personaId: string; onSuccess: (conductorId: string) => void; onClose: () => void }) => {
+  const [licencia, setLicencia] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!licencia || licencia.trim().length < 4) {
+      setError('Por favor ingresa un número de licencia válido (mínimo 4 caracteres).');
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const res = await businessApi.post('/conductor', {
+        personaId,
+        licencia: licencia.trim(),
+        activo: true
+      });
+      onSuccess(res.data?.id);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || 'Error al registrar la licencia.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+      <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', padding: '2.5rem', maxWidth: '480px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚌</div>
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.5rem' }}>¡Bienvenido Conductor!</h2>
+        <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+          Para completar tu perfil operativo y poder recibir la asignación de tu empresa y turnos, ingresa tu número de Licencia de Conducir.
+        </p>
+
+        {error && (
+          <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#f87171', padding: '0.8rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontWeight: 600, fontSize: '0.85rem' }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '0.5rem', fontWeight: 600 }}>Número de Licencia</label>
+            <input 
+              type="text" placeholder="Ej. LIC-12345678" value={licencia} onChange={e => setLicencia(e.target.value)}
+              style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem', fontWeight: 600 }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button 
+              type="button" onClick={onClose} disabled={isSubmitting}
+              style={{ flex: 1, padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+            >
+              Más tarde
+            </button>
+            <button 
+              type="submit" disabled={isSubmitting}
+              style={{ flex: 2, padding: '0.8rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontWeight: 700, boxShadow: '0 4px 12px rgba(99,102,241,0.3)', opacity: isSubmitting ? 0.7 : 1 }}
+            >
+              {isSubmitting ? 'Registrando...' : 'Registrarme ✓'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export interface Permission {
   modulo: string;
@@ -59,6 +131,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [activeRole, setActiveRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [syncPersonaId, setSyncPersonaId] = useState<string | null>(null);
 
   const handleSetActiveRole = (role: Role) => {
     setActiveRole(role);
@@ -153,8 +227,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       handleSetActiveRole(roleObj);
       // Sincronizar en background con ms-business (solo con token definitivo)
       syncBusinessUser().then((data) => {
-        if (data && (data.ciudadanoId || data.conductorId)) {
-          setUser(prev => prev ? { ...prev, ciudadanoId: data.ciudadanoId, conductorId: data.conductorId } : null);
+        if (data) {
+          if (data.ciudadanoId || data.conductorId) {
+            setUser(prev => prev ? { ...prev, ciudadanoId: data.ciudadanoId, conductorId: data.conductorId } : null);
+          }
+          // Verificar si es conductor sin licencia
+          const isDriver = data.roles?.includes("Conductor") || data.roles?.includes("CONDUCTOR") || roleObj.name.toUpperCase() === "CONDUCTOR";
+          if (isDriver && !data.conductorId) {
+            setSyncPersonaId(data.id || userId);
+            setShowLicenseModal(true);
+          }
         }
       }).catch(() => {});
     } else {
@@ -237,6 +319,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
+      {showLicenseModal && syncPersonaId && (
+        <DriverLicenseModal 
+          personaId={syncPersonaId}
+          onSuccess={(conductorId) => {
+            setUser(prev => prev ? { ...prev, conductorId } : null);
+            setShowLicenseModal(false);
+          }}
+          onClose={() => setShowLicenseModal(false)}
+        />
+      )}
     </AuthContext.Provider>
   );
 };
