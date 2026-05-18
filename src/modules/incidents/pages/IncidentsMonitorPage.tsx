@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useIncidents } from '../hooks/useIncidents';
 import { IncidentCard } from '../components/IncidentCard';
 import { Loader } from '../../../shared/components/ui/Loader';
-import { incidentsMockService } from '../services/incidentsMockService';
+import { incidentsService } from '../services/incidentsService';
 
 const IncidentsMonitorPage = () => {
   const { incidents, isLoading, error, refetch } = useIncidents(true); // true = admin view
@@ -10,7 +10,7 @@ const IncidentsMonitorPage = () => {
 
   const handleStatusChange = async (id: string, newStatus: any) => {
     try {
-      await incidentsMockService.updateStatus(id, newStatus);
+      await incidentsService.updateEstado(id, newStatus);
       // refetch se hace automáticamente porque el hook escucha el WS_EVENTS.INCIDENT_UPDATED
       // pero por si acaso, el mockService actualiza en memoria y el WS dispara el evento localmente
       // si isMockSocket es true, pero en este caso podríamos llamar refetch
@@ -23,7 +23,7 @@ const IncidentsMonitorPage = () => {
 
   const filteredIncidents = incidents.filter(i => {
     if (filter === 'Todos') return true;
-    if (filter === 'Pendientes') return i.estado === 'Reportado' || i.estado === 'En_Revision';
+    if (filter === 'Pendientes') return i.estado === 'Pendiente' || i.estado === 'En_Revision';
     return i.estado === filter;
   });
 

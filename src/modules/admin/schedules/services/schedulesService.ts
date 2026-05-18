@@ -1,13 +1,12 @@
 import { businessApi } from '../../../../api/api';
 
 export const TipoRecurrencia = {
-  DIARIA: 'Diaria',
-  LABORAL: 'Laboral',
-  FIN_SEMANA: 'Fin de semana',
+  DIARIA:'Diaria',
+  LABORAL:'Laboral',
+  FIN_SEMANA:'Fin_Semana',
 } as const;
 
-export type TipoRecurrencia =
-  (typeof TipoRecurrencia)[keyof typeof TipoRecurrencia];
+export type TipoRecurrencia = (typeof TipoRecurrencia)[keyof typeof TipoRecurrencia];
 
 export interface Programacion {
   id: string;
@@ -18,6 +17,7 @@ export interface Programacion {
   tipo_recurrencia: string;
   estado: string;
   pasajeros_actuales: number;
+  tolerancia_minutos: number;
 }
 
 export interface CreateProgramacionDto {
@@ -35,8 +35,22 @@ export const schedulesService = {
     return response.data;
   },
 
+  getById: async (id: string): Promise<Programacion> => {
+    const response = await businessApi.get<Programacion>(`/programaciones/${id}`);
+    return response.data;
+  },
+
   create: async (dto: CreateProgramacionDto): Promise<Programacion> => {
     const response = await businessApi.post<Programacion>('/programaciones', dto);
     return response.data;
-  }
+  },
+
+  update: async (id: string, dto: Partial<CreateProgramacionDto>): Promise<Programacion> => {
+    const response = await businessApi.patch<Programacion>(`/programaciones/${id}`, dto);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await businessApi.delete(`/programaciones/${id}`);
+  },
 };
