@@ -218,7 +218,6 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
-<<<<<<< HEAD
           {/* ---- Admin: Empresas ---- */}
           <Route path="/admin/empresas" element={
             <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'leer' }}>
@@ -229,12 +228,13 @@ export default function AppRouter() {
           <Route path="/admin/empresas/crear" element={
             <ProtectedRoute permission={{ module: MODULES.EMPRESAS, action: 'escribir' }}>
               <SuspenseWrapper><CreateEmpresaPage /></SuspenseWrapper>
-=======
+            </ProtectedRoute>
+          } />
+
           {/* Incidentes por bus */}
           <Route path="/admin/buses/incidencias/:id" element={
             <ProtectedRoute permission={{ module: MODULES.INCIDENTES, action: 'leer' }}>
               <SuspenseWrapper><IncidentsByBusPage /></SuspenseWrapper>
->>>>>>> b2de9e4 (Resolver conflictos con main)
             </ProtectedRoute>
           } />
 
