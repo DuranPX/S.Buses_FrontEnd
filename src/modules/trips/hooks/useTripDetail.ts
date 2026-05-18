@@ -1,5 +1,6 @@
+// src/modules/trips/hooks/useTripDetail.ts
 import { useState, useEffect } from 'react';
-import { tripsMockService } from '../services/tripsMockService';
+import { tripsService } from '../services/tripsService';
 import type { Trip } from '../types/trip.types';
 
 export const useTripDetail = (id: string | undefined) => {
@@ -12,12 +13,11 @@ export const useTripDetail = (id: string | undefined) => {
     setIsLoading(true);
     setError(null);
 
-    tripsMockService.getTripDetail(id).then(data => {
-      if (!data) setError('Viaje no encontrado.');
-      else setTrip(data);
-    }).catch(() => {
-      setError('Error al cargar el detalle del viaje.');
-    }).finally(() => setIsLoading(false));
+    tripsService
+      .getTripDetail(id)
+      .then(setTrip)
+      .catch(() => setError('Error al cargar el detalle del viaje.'))
+      .finally(() => setIsLoading(false));
   }, [id]);
 
   return { trip, isLoading, error };

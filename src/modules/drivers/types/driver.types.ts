@@ -10,7 +10,7 @@ export interface DriverShift {
   fecha_fin_programada: string;
   fecha_inicio_real: string | null;
   fecha_fin_real: string | null;
-  estado: 'Programado' | 'En_Curso' | 'Finalizado';
+  estado: 'PROGRAMADO' | 'EN_CURSO' | 'FINALIZADO';
   observaciones: string;
   // expandidos
   conductor_nombre?: string;

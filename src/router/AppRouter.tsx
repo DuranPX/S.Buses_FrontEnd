@@ -21,6 +21,7 @@ import CompleteProfile from "../features/auth/pages/CompleteProfile"
 import ProfilePage from "../features/profile/pages/ProfilePage"
 import { Loader } from "../shared/components/ui/Loader"
 
+
 // ================================================================
 // LAZY IMPORTS — Módulos de Negocio (Fase 2-6)
 // Se cargan solo cuando el usuario navega a esa ruta.
@@ -53,6 +54,7 @@ const StartShiftPage  = lazy(() => import("../modules/drivers/pages/StartShiftPa
 const CreateIncidentPage    = lazy(() => import("../modules/incidents/pages/CreateIncidentPage"))
 const IncidentsMonitorPage  = lazy(() => import("../modules/incidents/pages/IncidentsMonitorPage"))
 const IncidentsHistoryPage  = lazy(() => import("../modules/incidents/pages/IncidentsHistoryPage"))
+const IncidentsByBusPage  = lazy(() => import("../modules/incidents/pages/IncidentsByBusPage"))
 
 // --- Admin: Rutas (HU-009) ---
 const AdminRoutesPage  = lazy(() => import("../modules/admin/routes/pages/AdminRoutesPage"))
@@ -60,6 +62,10 @@ const CreateRoutePage  = lazy(() => import("../modules/admin/routes/pages/Create
 
 // --- Admin: Conductores ---
 const AdminDriversPage = lazy(() => import("../modules/admin/drivers/pages/AdminDriversPage"))
+
+// --- Admin: Turnos ---
+const AdminTurnosPage = lazy(() => import("../modules/admin/turnos/pages/AdminTurnosPage"))
+const CreateTurnoPage = lazy(() => import("../modules/admin/turnos/pages/CreateTurnoPage"))
 
 // --- Admin: Paraderos (HU-010) ---
 const AdminStopsPage = lazy(() => import("../modules/admin/stops/pages/AdminStopsPage"))
@@ -170,6 +176,19 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          {/* ---- Admin: Turnos (HU-006) ---- */}
+          <Route path="/admin/turnos" element={
+            <ProtectedRoute permission={{ module: MODULES.TURNOS, action: 'leer' }}>
+              <SuspenseWrapper><AdminTurnosPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/turnos/crear" element={
+            <ProtectedRoute permission={{ module: MODULES.TURNOS, action: 'escribir' }}>
+              <SuspenseWrapper><CreateTurnoPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           {/* ---- Admin: Paraderos (HU-010) ---- */}
           <Route path="/admin/paraderos" element={
             <ProtectedRoute permission={{ module: MODULES.PARADEROS, action: 'leer' }}>
@@ -229,8 +248,15 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          {/* Incidentes por bus */}
+          <Route path="/admin/buses/incidencias/:id" element={
+            <ProtectedRoute permission={{ module: MODULES.INCIDENTES, action: 'leer' }}>
+              <SuspenseWrapper><IncidentsByBusPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           {/* ---- Placeholders admin sin implementación aún ---- */}
-          {[MODULES.TURNOS, MODULES.CLIENTES].map(modulo => (
+          {[MODULES.CLIENTES].map(modulo => (
             <Route key={`admin-${modulo}`} path={`/admin/${modulo}`} element={
               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
                 <GenericModulePlaceholder moduleName={modulo} />
