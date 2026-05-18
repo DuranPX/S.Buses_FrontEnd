@@ -85,7 +85,17 @@ const CreateTurnoPage = () => {
     setIsProcessing(true);
     setError(null);
     try {
-      await turnosService.create(formData);
+      const selectedBus = buses.find((b) => b.id === formData.busId);
+      const payload = {
+        conductorId: formData.conductorId,
+        // Aseguramos que se envíe el id real del bus seleccionado
+        busId: selectedBus?.id ?? formData.busId,
+        fecha_inicio_programada: formData.fecha_inicio_programada,
+        fecha_fin_programada: formData.fecha_fin_programada,
+      };
+
+      console.log('Crear turno con payload:', payload);
+      await turnosService.create(payload);
       navigate('/admin/turnos');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
