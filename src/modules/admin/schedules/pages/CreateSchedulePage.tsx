@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { routesService } from '../../../routes/services/routesService';
 import { busesService, type Bus } from '../../buses/services/busesService';
-import { schedulesService, TipoRecurrencia, type CreateProgramacionDto } from '../services/schedulesService';
+import { EstadoProgramacion, schedulesService, TipoRecurrencia, type CreateProgramacionDto } from '../services/schedulesService';
 import type { Route } from '../../../routes/types/route.types';
 import { Loader } from '../../../../shared/components/ui/Loader';
 
@@ -21,6 +21,7 @@ const CreateSchedulePage = () => {
     fecha: new Date().toISOString().split('T')[0],
     hora_salida: '06:00',
     tipo_recurrencia: TipoRecurrencia.DIARIA,
+    estado: EstadoProgramacion.PROGRAMADO,
     tolerancia_minutos: 5,
   });
 
@@ -49,6 +50,19 @@ const CreateSchedulePage = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.ruta_id || !formData.bus_id) return;
+
+    const selectedDateTime = new Date(`${formData.fecha}T${formData.hora_salida}:00`);
+    const now = new Date();
+
+    if (isNaN(selectedDateTime.getTime())) {
+      setError('La fecha u hora enviada no es válida.');
+      return;
+    }
+
+    // if (selectedDateTime < now) {
+    //   setError('La fecha no puede ser en el pasado. Ajusta la fecha u hora de salida.');
+    //   return;
+    // }
 
     setIsProcessing(true);
     setError(null);
@@ -164,6 +178,19 @@ const CreateSchedulePage = () => {
             <option value={TipoRecurrencia.DIARIA}>Diaria</option>
             <option value={TipoRecurrencia.LABORAL}>Laboral (L-V)</option>
             <option value={TipoRecurrencia.FIN_SEMANA}>Fines de Semana</option>
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Estado</label>
+          <select
+            value={formData.estado}
+            onChange={e => setFormData({ ...formData, estado: e.target.value as EstadoProgramacion })}
+            style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+          >
+            <option value={EstadoProgramacion.PROGRAMADO}>Programado</option>
+            <option value={EstadoProgramacion.EN_CURSO}>En Curso</option>
+            <option value={EstadoProgramacion.FINALIZADO}>Finalizado</option>
           </select>
         </div>
 

@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
+import { useAuth } from '../../../features/auth/hooks/useAuth';
 import { loadEpaycoScript } from '../../../shared/utils/epayco';
 
 const PaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { billeteraPrincipal } = useWallet();
+  const { user } = useAuth();
   const amount = location.state?.amount || 0;
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saldoActual = Number(billeteraPrincipal?.saldo || 0);
+  const saldoDespues = saldoActual + amount;
 
   if (!amount) {
     navigate('/cartera/recarga', { replace: true });
@@ -24,17 +28,16 @@ const PaymentPage = () => {
     try {
       const ePayco = await loadEpaycoScript();
       const handler = ePayco.checkout.configure({
-        key: import.meta.env.VITE_EPAYCO_PUBLIC_KEY || '45b960805ced5c27ce34b1600b4b9f54', // Llave pública de prueba ePayco
-        test: import.meta.env.VITE_EPAYCO_TEST !== 'false' // true para pruebas, false para producción
+        key: import.meta.env.VITE_EPAYCO_PUBLIC_KEY,
+        test: import.meta.env.VITE_EPAYCO_TEST === 'true'
       });
 
       const numFactura = `REC-${billeteraId}-${crypto.randomUUID()}`;
-      const appUrl = import.meta.env.VITE_APP_URL ;
-      const apiUrl = import.meta.env.VITE_API_URL ;
+      const appUrl = import.meta.env.VITE_APP_URL;
 
       const data = {
         name: "Recarga Billetera de Transporte",
-        description: `Recarga de saldo virtual para Billetera #${billeteraId}`,
+        description: `Recarga tarjeta transporte #${billeteraId}`,
         invoice: numFactura,
         currency: "cop",
         amount: amount.toString(),
@@ -44,11 +47,13 @@ const PaymentPage = () => {
         lang: "es",
         extra1: billeteraId,
         extra2: "RECARGA",
-        external: "false",
+        external: false,
         response: `${appUrl}/admin/pagos/respuesta`,
-        confirmation: `${apiUrl}/metodo-pago-ciudadano/epayco-webhook`
+        test: import.meta.env.VITE_EPAYCO_TEST === 'true',
+        email_billing: user?.email || ""
       };
 
+      console.log("RESPONSE URL:", data.response);
       handler.open(data);
       setIsProcessing(false);
     } catch (err: any) {
@@ -73,9 +78,13 @@ const PaymentPage = () => {
         </div>
 
         <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '2rem', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ color: '#64748b' }}>Concepto</span>
-            <span style={{ fontWeight: 600 }}>Recarga de Cartera Virtual</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <span style={{ color: '#64748b' }}>Saldo actual</span>
+            <span style={{ fontWeight: 600 }}>${saldoActual.toLocaleString('es-CO')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <span style={{ color: '#64748b' }}>Saldo después de recarga</span>
+            <span style={{ fontWeight: 600 }}>${saldoDespues.toLocaleString('es-CO')}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', borderTop: '1px dashed #cbd5e1', paddingTop: '1rem', marginTop: '1rem' }}>
             <span>Total a Pagar</span>
@@ -93,8 +102,17 @@ const PaymentPage = () => {
           onClick={handlePay} disabled={isProcessing}
           style={{ width: '100%', background: '#000', color: 'white', padding: '1.2rem', borderRadius: '0.5rem', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1.1rem', opacity: isProcessing ? 0.8 : 1 }}
         >
-          {isProcessing ? 'Abriendo ePayco...' : 'Pagar con ePayco'}
+          {isProcessing ? 'Abriendo ePayco...' : 'Continuar al pago'}
         </button>
+
+        <button
+          onClick={() => navigate('/admin/pagos/respuesta')}
+          type="button"
+          style={{ width: '100%', marginTop: '0.75rem', background: '#64748b', color: 'white', padding: '1.2rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '1.1rem' }}
+        >
+          Ya pagué / Validar pago manualmente
+        </button>
+
         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8', marginTop: '1rem' }}>
           Serás redirigido al widget seguro de ePayco para completar tu pago.
         </p>
