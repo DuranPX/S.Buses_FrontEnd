@@ -13,6 +13,11 @@ const RechargePage = () => {
   const [isLinking, setIsLinking] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const minAmount = 5000;
+  const maxAmount = 500000;
+  const saldoActual = Number(billeteraPrincipal?.saldo || 0);
+  const saldoDespues = saldoActual + amount;
+  const isAmountValid = amount >= minAmount && amount <= maxAmount;
 
   useEffect(() => {
     walletService.getCatalogoMetodosPago()
@@ -120,33 +125,52 @@ const RechargePage = () => {
             <div style={{ flex: '1 1 200px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Monto a recargar ($ COP)</label>
               <input 
-                type="number" value={amount} onChange={e => setAmount(Number(e.target.value))}
+                type="number" value={amount} onChange={e => setAmount(Number(e.target.value) || 0)}
                 style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1.2rem', fontWeight: 'bold' }} 
               />
+              <p style={{ margin: '0.75rem 0 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>
+                Selecciona un monto predefinido o ingresa un valor entre ${minAmount.toLocaleString('es-CO')} y ${maxAmount.toLocaleString('es-CO')}.
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flex: '1 1 250px' }}>
-              {[10000, 20000, 50000].map(val => (
-                <button key={val} onClick={() => setAmount(val)} style={{ flex: 1, padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flex: '1 1 250px', flexWrap: 'wrap' }}>
+              {[10000, 20000, 50000, 100000].map(val => (
+                <button key={val} onClick={() => setAmount(val)} style={{ flex: '1 1 100px', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>
                   +${val / 1000}k
                 </button>
               ))}
             </div>
           </div>
 
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '1.25rem', color: '#94a3b8' }}>
+            <div>
+              <div style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>Saldo actual</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${saldoActual.toLocaleString('es-CO')}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>Saldo después de recarga</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${saldoDespues.toLocaleString('es-CO')}</div>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1.5rem' }}>
             <button 
-              onClick={handleDirectRecharge} disabled={isProcessingDirect || amount < 1000}
-              style={{ flex: 1, minWidth: '220px', background: 'rgba(255,255,255,0.05)', color: '#34d399', border: '1px solid #34d399', padding: '1rem', borderRadius: '0.5rem', cursor: (isProcessingDirect || amount < 1000) ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1rem', transition: 'all 0.2s', opacity: (isProcessingDirect || amount < 1000) ? 0.6 : 1 }}
+              onClick={handleDirectRecharge} disabled={isProcessingDirect || !isAmountValid}
+              style={{ flex: 1, minWidth: '220px', background: 'rgba(255,255,255,0.05)', color: '#34d399', border: '1px solid #34d399', padding: '1rem', borderRadius: '0.5rem', cursor: (isProcessingDirect || !isAmountValid) ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1rem', transition: 'all 0.2s', opacity: (isProcessingDirect || !isAmountValid) ? 0.6 : 1 }}
             >
               {isProcessingDirect ? 'Procesando...' : '⚡ Recarga Directa (Bono/Taquilla)'}
             </button>
             <button 
-              onClick={() => navigate('/cartera/pago', { state: { amount } })} disabled={amount < 1000}
-              style={{ flex: 1, minWidth: '220px', background: '#6366f1', color: 'white', border: 'none', padding: '1rem', borderRadius: '0.5rem', cursor: amount < 1000 ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1rem', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', transition: 'all 0.2s', opacity: amount < 1000 ? 0.6 : 1 }}
+              onClick={() => navigate('/cartera/pago', { state: { amount } })} disabled={!isAmountValid}
+              style={{ flex: 1, minWidth: '220px', background: '#6366f1', color: 'white', border: 'none', padding: '1rem', borderRadius: '0.5rem', cursor: !isAmountValid ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1rem', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', transition: 'all 0.2s', opacity: !isAmountValid ? 0.6 : 1 }}
             >
               🔒 Recargar con ePayco
             </button>
           </div>
+          {!isAmountValid && (
+            <div style={{ marginTop: '1rem', color: '#f87171', fontSize: '0.95rem' }}>
+              Ingresa un monto válido entre ${minAmount.toLocaleString('es-CO')} y ${maxAmount.toLocaleString('es-CO')} para continuar.
+            </div>
+          )}
         </div>
       </div>
 
