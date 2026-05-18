@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { ticketsService } from '../services/ticketsService';
 import { businessApi } from '../../../api/api';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { useWallet } from '../../../modules/wallet/context/WalletContext';
 import { useSocket } from '../../../websocket/hooks/useSocket';
 import { WS_EVENTS } from '../../../websocket/events';
 import type { CreateBoletoDto, Ticket } from '../types/ticket.types';
@@ -550,6 +551,7 @@ const StepExito = ({
 const AbordajePage = () => {
     const navigate = useNavigate();
     const { activeRole } = useAuth();
+    const { refreshWallet } = useWallet();
     const isAdmin = activeRole?.name === 'Admin' || activeRole?.name === 'ADMIN';
 
     const [step, setStep] = useState<Step>('programacion');
@@ -581,10 +583,13 @@ const AbordajePage = () => {
             localStorage.setItem('active_ticket_id', result.id);
             localStorage.setItem('active_ticket_ruta', result.ruta_codigo || '');
             
+            // Refrescar billetera global tras el cobro
+            refreshWallet().catch(() => {});
+
             setStep('exito');
         } catch (e: any) {
             // Manejar específicamente HTTP 402 Payment Required u otros errores de la API
-            const msg = e?.response?.status === 402 || e.message?.includes('402') || e.message?.includes('Insufficient balance')
+            const msg = e?.response?.status === 402 || e.message?.includes('402') || e.message?.includes('Balance') || e.message?.includes('saldo')
                 ? 'Saldo insuficiente en tu método de pago.'
                 : e?.response?.data?.message || e.message || 'No se pudo procesar el abordaje.';
             

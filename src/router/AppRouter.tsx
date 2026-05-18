@@ -84,6 +84,7 @@ const CreateEmpresaPage = lazy(() => import("../modules/admin/empresas/pages/Cre
 // --- Cartera (HU-013) ---
 const RechargePage = lazy(() => import("../modules/wallet/pages/RechargePage"))
 const PaymentPage  = lazy(() => import("../modules/wallet/pages/PaymentPage"))
+const EpaycoResponsePage = lazy(() => import("../modules/admin/pagos/pages/EpaycoResponsePage"))
 
 // --- Analíticas (HU-014/015/016) ---
 const IncomeAnalyticsPage   = lazy(() => import("../modules/analytics/pages/IncomeAnalyticsPage"))
@@ -361,6 +362,12 @@ export default function AppRouter() {
           <Route path="/cartera/pago" element={
             <ProtectedRoute permission={{ module: MODULES.CARTERA, action: 'leer' }}>
               <SuspenseWrapper><PaymentPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/pagos/respuesta" element={
+            <ProtectedRoute permission={{ module: MODULES.CARTERA, action: 'leer' }}>
+              <SuspenseWrapper><EpaycoResponsePage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
 

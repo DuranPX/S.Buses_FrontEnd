@@ -22,7 +22,7 @@ export interface CreateTurnoDto {
 export const turnosService = {
   getAll: async (): Promise<Turno[]> => {
     const { data } = await businessApi.get('/turno');
-    return data;
+    return Array.isArray(data) ? data : [];
   },
 
   create: async (dto: CreateTurnoDto): Promise<Turno> => {

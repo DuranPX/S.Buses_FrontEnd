@@ -13,9 +13,12 @@ export const useAuthorization = () => {
   const can = (module: ModuleName, action: ActionType): boolean => {
     if (!activeRole || !activeRole.activo) return false;
 
-    // Admin has full permissions (short-circuit for simplicity if needed, 
-    // but better to check the actual permissions list in the role)
-    // if (activeRole.name === 'ADMIN') return true;
+    // Admin tiene permisos completos en todo el sistema
+    if (activeRole.name === 'Admin' || activeRole.name === 'ADMIN') return true;
+
+    // Cartera (Mi Billetera): la puede ver todo tipo de usuario ciudadano, conductor o admin
+    if (module === 'cartera' && action === 'leer') return true;
+    if (module === 'cartera' && action !== 'leer') return false; // Solo admin (ya cubierto arriba)
 
     const permission = activeRole.permisos.find((p: any) => p.modulo === module);
     
