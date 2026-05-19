@@ -324,13 +324,41 @@ const StepMetodoPago = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const { user, isLoading: authLoading } = useAuth();
+
     useEffect(() => {
-        businessApi
-            .get<MetodoPagoCiudadano[]>('/metodo-pago-ciudadano')
-            .then(res => setItems(res.data))
-            .catch(e => setError(e?.response?.data?.message || e.message))
-            .finally(() => setLoading(false));
-    }, []);
+    const fetchMetodosPago = async () => {
+        try {
+            // Obtener `ciudadanoId` desde el contexto de auth (recomendado)
+            const ciudadanoId = user?.ciudadanoId || user?.id || null;
+
+            // Si aún estamos cargando auth, esperar un poco hasta que termine
+            if (!ciudadanoId && authLoading) {
+                // Reintentar después de 200ms (simple backoff) — evita bloquear la UI
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            // Si no tenemos ciudadanoId, usamos el endpoint genérico que infiere desde el token
+            const url = ciudadanoId
+                ? `/metodo-pago-ciudadano/ciudadano/${ciudadanoId}`
+                : `/metodo-pago-ciudadano`;
+
+            const response = await businessApi.get<MetodoPagoCiudadano[]>(url);
+
+            setItems(response.data);
+        } catch (e: any) {
+            setError(
+                e?.response?.data?.message ||
+                    e.message ||
+                    'Error cargando métodos de pago.',
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchMetodosPago();
+}, []);
 
     const tipo = (m: MetodoPagoCiudadano) => m.tipo ?? m.metodoPago?.tipo ?? '';
 
@@ -871,10 +899,8 @@ const AbordajePage = () => {
 
             refreshWallet().catch(() => { });
             setStep('exito');
-
-
-            navigate('/abordaje', { replace: true }); // ← recarga la página limpia
-            window.location.reload();
+          
+            navigate('/boletos');
 
         } catch (e: any) {
             const msg =

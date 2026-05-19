@@ -33,7 +33,9 @@ const CreateIncidentPage = () => {
   });
 
   const handleStartShift = async () => {
-    const success = await startShift(condition);
+    if (!shift) return;
+
+    const success = await startShift(shift.id, condition);
 
     if (success) {
       showAlert.success(

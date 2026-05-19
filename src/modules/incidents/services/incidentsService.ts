@@ -41,6 +41,18 @@ export const incidentsService = {
     const response = await businessApi.get<Incidente[]>('/incidentes');
     return response.data;
   },
+  
+  addComentario: async (
+    id: string,
+    texto: string,
+    autor?: string,
+  ): Promise<Incidente> => {
+    const response = await businessApi.post<Incidente>(
+      `/incidentes/${id}/comentarios`,
+      { texto, autor },
+    );
+    return response.data;
+  },
 
   // Obtener incidentes por bus
   getByBus: async (bus_id: string): Promise<IncidenteBus[]> => {

@@ -17,7 +17,8 @@ const StartShiftPage = () => {
   }, [shift, navigate]);
 
   const handleStart = async (condition: BusCondition) => {
-    const success = await startShift(condition);
+    if (!shift) return;
+    const success = await startShift(shift.id, condition);
     if (success) {
       navigate('/conductor/turno');
     }

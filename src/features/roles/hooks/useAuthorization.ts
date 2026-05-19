@@ -19,14 +19,25 @@ export const useAuthorization = () => {
     // Ciudadano: acceso completo a módulos de usuario final
     const citizenFullAccessModules: ModuleName[] = ['boletos', 'viajes', 'cartera'];
     if ((activeRole.name === 'Ciudadano' || activeRole.name === 'CIUDADANO' || activeRole.name?.toLowerCase() === 'ciudadano')
-        && citizenFullAccessModules.includes(module)) return true;
+      && citizenFullAccessModules.includes(module)) return true;
+    // Ciudadano: solo lectura de programaciones
+    if (
+      (activeRole.name === 'Ciudadano' ||
+        activeRole.name === 'CIUDADANO' ||
+        activeRole.name?.toLowerCase() ===
+        'ciudadano') &&
+      module === 'programaciones' &&
+      action === 'leer'
+    ) {
+      return true;
+    }
 
     // Cartera (Mi Billetera): la puede ver todo tipo de usuario ciudadano, conductor o admin
     if (module === 'cartera' && action === 'leer') return true;
     if (module === 'cartera' && action !== 'leer') return false; // Solo admin (ya cubierto arriba)
 
     const permission = activeRole.permisos.find((p: any) => p.modulo === module);
-    
+
     if (!permission) return false;
 
     return !!permission[action];

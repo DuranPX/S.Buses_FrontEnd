@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { WS_EVENTS } from '../../../websocket/events';
 import { isMockSocket, appSocket } from '../../../websocket/socket';
 
 export const MockGPSController = () => {
-  const [isActive, setIsActive] = useState(false);
+  const isActive = true;
 
   useEffect(() => {
     if (!isMockSocket || !isActive) return;
@@ -26,25 +26,6 @@ export const MockGPSController = () => {
   }, [isActive]);
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '1rem', borderRadius: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <div>
-        <h4 style={{ margin: '0 0 0.25rem', color: '#f8fafc', fontSize: '0.9rem' }}>Simulador GPS (Mock)</h4>
-        <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
-          Emite coordenadas falsas por WebSockets para pruebas.
-        </p>
-      </div>
-      <button 
-        onClick={() => setIsActive(!isActive)}
-        style={{ 
-          background: isActive ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
-          color: isActive ? '#ef4444' : '#10b981',
-          border: `1px solid ${isActive ? '#ef4444' : '#10b981'}`,
-          padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer',
-          fontWeight: 600, fontSize: '0.8rem'
-        }}
-      >
-        {isActive ? 'Detener GPS' : 'Iniciar GPS'}
-      </button>
-    </div>
+    <div style={{ display: 'none' }}></div>
   );
 };

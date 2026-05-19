@@ -22,7 +22,7 @@ export const MODULES = {
   VIAJES: 'viajes',
   CARTERA: 'cartera',
   ANALITICAS: 'analiticas',
-  TURNO_CONDUCTOR: 'conductor',
+  TURNO_CONDUCTOR: 'turno_conductor',
 } as const;
 
 export type ModuleName = typeof MODULES[keyof typeof MODULES];

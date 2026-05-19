@@ -14,6 +14,7 @@ export interface Incidente {
   latitud: number;
   longitud: number;
   fecha_reporte: string;
+  comentarios?: Comentario[];
   incidenteBuses?: IncidenteBus[];
 }
 
@@ -44,6 +45,12 @@ export interface CreateIncidenteDto {
 export interface CreateIncidenteBusDto {
   incidente_id: string;
   bus_id: string;
+}
+
+export interface Comentario {
+  texto: string;
+  fecha: string;
+  autor?: string;
 }
 
 export type Incident = Incidente;

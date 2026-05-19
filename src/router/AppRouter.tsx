@@ -47,8 +47,7 @@ const TripHistoryPage   = lazy(() => import("../modules/trips/pages/TripHistoryP
 const TripDetailPage    = lazy(() => import("../modules/trips/pages/TripDetailPage"))
 
 // --- Conductores / Turnos (HU-006) ---
-const DriverShiftPage = lazy(() => import("../modules/drivers/pages/DriverShiftPage"))
-const StartShiftPage  = lazy(() => import("../modules/drivers/pages/StartShiftPage"))
+const TurnoActualPage = lazy(() => import("../modules/drivers/pages/TurnoActualPage"))
 
 // --- Incidentes (HU-007 + HU-008) ---
 const CreateIncidentPage    = lazy(() => import("../modules/incidents/pages/CreateIncidentPage"))
@@ -338,13 +337,7 @@ export default function AppRouter() {
           {/* ---- Conductor: Turno (HU-006) ---- */}
           <Route path="/conductor/turno" element={
             <ProtectedRoute permission={{ module: MODULES.TURNO_CONDUCTOR, action: 'leer' }}>
-              <SuspenseWrapper><DriverShiftPage /></SuspenseWrapper>
-            </ProtectedRoute>
-          } />
-
-          <Route path="/conductor/turno/iniciar" element={
-            <ProtectedRoute permission={{ module: MODULES.TURNO_CONDUCTOR, action: 'escribir' }}>
-              <SuspenseWrapper><StartShiftPage /></SuspenseWrapper>
+              <SuspenseWrapper><TurnoActualPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
 
