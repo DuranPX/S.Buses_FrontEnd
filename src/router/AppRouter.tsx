@@ -70,6 +70,7 @@ const CreateStopPage = lazy(() => import("../modules/admin/stops/pages/CreateSto
 // --- Admin: Programaciones (HU-011) ---
 const SchedulesPage       = lazy(() => import("../modules/admin/schedules/pages/SchedulesPage"))
 const CreateSchedulePage  = lazy(() => import("../modules/admin/schedules/pages/CreateSchedulePage"))
+const SchedulesPublicPage = lazy(() => import("../modules/schedules/pages/SchedulesPublicPage"))
 
 // --- Admin: Buses (HU-012) ---
 const BusesPage      = lazy(() => import("../modules/admin/buses/pages/BusesPage"))
@@ -270,6 +271,13 @@ export default function AppRouter() {
           <Route path="/paradero/actual" element={
             <ProtectedRoute permission={{ module: MODULES.PARADEROS, action: 'leer' }}>
               <SuspenseWrapper><NearbyStopsPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          {/* ---- Horarios públicos (HU-011) ---- */}
+          <Route path="/programaciones" element={
+            <ProtectedRoute permission={{ module: MODULES.PROGRAMACIONES, action: 'leer' }}>
+              <SuspenseWrapper><SchedulesPublicPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
 

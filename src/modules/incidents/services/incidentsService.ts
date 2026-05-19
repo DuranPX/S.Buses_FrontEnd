@@ -36,6 +36,18 @@ export const incidentsService = {
     return response.data;
   },
 
+  addComentario: async (
+    id: string,
+    texto: string,
+    autor?: string,
+  ): Promise<Incidente> => {
+    const response = await businessApi.post<Incidente>(
+      `/incidentes/${id}/comentarios`,
+      { texto, autor },
+    );
+    return response.data;
+  },
+
   // Obtener todos los incidentes — para admin
   getAll: async (): Promise<Incidente[]> => {
     const response = await businessApi.get<Incidente[]>('/incidentes');
