@@ -4,17 +4,40 @@ import { useTickets } from '../../tickets/hooks/useTickets';
 import { useNearbyStops } from '../../stops/hooks/useNearbyStops';
 import { useGeolocation } from '../../stops/hooks/useGeolocation';
 import { useTripFinish } from '../hooks/useTripFinish';
+import { useSocket } from '../../../websocket/hooks/useSocket';
 import { Loader } from '../../../shared/components/ui/Loader';
+import { WS_EVENTS } from '../../../websocket/events';
+
+// Función para calcular distancia Haversine entre dos coordenadas (en metros)
+const haversineDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 6371e3; // Radio de la Tierra en metros
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const FinishTripPage = () => {
   const navigate = useNavigate();
-  const { tickets, isLoading: loadingTickets } = useTickets();
+  const { tickets, isLoading: loadingTickets, refetch: refetchTickets } = useTickets();
   const { location } = useGeolocation();
   const { stops } = useNearbyStops(location);
   const { finishTrip, isLoading: finishing, error } = useTripFinish();
 
   const [selectedTicketId, setSelectedTicketId] = useState<string>(localStorage.getItem('active_ticket_id') || '');
   const [selectedStopId, setSelectedStopId] = useState<string>('');
+  const [distanceToStop, setDistanceToStop] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
   useEffect(() => {
     // Si ya tenemos uno persistido, intentamos usarlo. Si no, tomamos el primero disponible.
@@ -27,10 +50,42 @@ const FinishTripPage = () => {
     if (stops.length > 0 && !selectedStopId) setSelectedStopId(stops[0].id);
   }, [stops, selectedStopId]);
 
+  // Calcular distancia al paradero seleccionado en tiempo real
+  useEffect(() => {
+    if (location && selectedStopId && stops.length > 0) {
+      const selectedStop = stops.find(s => s.id === selectedStopId);
+      if (selectedStop) {
+        const distance = haversineDistance(
+          location.lat,
+          location.lng,
+          selectedStop.latitud,
+          selectedStop.longitud
+        );
+        setDistanceToStop(distance);
+      }
+    }
+  }, [location, selectedStopId, stops]);
+
+  // Escuchar evento de descenso completado vía WebSocket
+  useSocket<{ boletoId: string; estado: string }>(
+    WS_EVENTS.PASSENGER_DESCENDED,
+    (data) => {
+      if (data.boletoId === selectedTicketId) {
+        setSuccessMessage(
+          'Descenso registrado en tiempo real. Redirigiendo...'
+        );
+        setTimeout(() => {
+          navigate('/viaje/completado', { state: { trip: data } });
+        }, 1500);
+      }
+    }
+  );
+
   const handleFinish = async () => {
     if (!selectedTicketId || !selectedStopId) return;
     const trip = await finishTrip(selectedTicketId, selectedStopId);
     if (trip) {
+      refetchTickets();
       navigate('/viaje/completado', { state: { trip } });
     }
   };
@@ -49,6 +104,23 @@ const FinishTripPage = () => {
           Marca tu descenso seleccionando tu boleto activo y el paradero en el que te encuentras.
         </p>
       </div>
+
+      {successMessage && (
+        <div
+          style={{
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid #10b981',
+            color: '#10b981',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            marginBottom: '1rem',
+            textAlign: 'center',
+            fontWeight: 600,
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
 
       {tickets.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#94a3b8', padding: '3rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '1rem', border: '1px dashed rgba(255,255,255,0.1)' }}>
@@ -85,6 +157,21 @@ const FinishTripPage = () => {
               }
             </select>
             {stops.length > 0 && <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#34d399' }}>Mostrando paraderos ordenados por cercanía a tu ubicación actual.</p>}
+            {distanceToStop !== null && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.9rem',
+                  color: '#93c5fd',
+                }}
+              >
+                📍 Distancia actual: <strong>{(distanceToStop / 1000).toFixed(2)} km</strong> ({Math.round(distanceToStop)} metros)
+              </div>
+            )}
           </div>
 
           {error && <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>{error}</div>}
