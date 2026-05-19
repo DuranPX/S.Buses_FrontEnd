@@ -10,65 +10,87 @@ interface SidebarProps {
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { canRead, activeRole } = useAuthorization();
 
+  /**
+   * Bloqueos temporales de módulos incompletos
+   */
+  const isTemporarilyBlocked = (module: string) => {
+    const roleName = activeRole?.name?.toUpperCase();
+
+    // Restricciones para CONDUCTOR
+    if (roleName === 'CONDUCTOR') {
+      const blockedModules = [
+        MODULES.TURNOS,
+        MODULES.PROGRAMACIONES,
+      ];
+
+      return blockedModules.includes(module as any);
+    }
+
+    return false;
+  };
+
   const GROUPS = [
-    // ---- Administración del sistema ----
     {
       label: 'Administración',
       items: [
-        { module: MODULES.USUARIOS,       path: '/admin/usuarios',           label: 'Usuarios'       },
-        { module: MODULES.ROLES,          path: '/admin/roles',              label: 'Roles'          },
-        { module: MODULES.RUTAS,          path: '/admin/rutas',              label: 'Gestión de Rutas' },
-        { module: MODULES.PARADEROS,      path: '/admin/paraderos',          label: 'Gestión de Paraderos' },
-        { module: MODULES.EMPRESAS,       path: '/admin/empresas',           label: 'Empresas'       },
+        { module: MODULES.USUARIOS, path: '/admin/usuarios', label: 'Usuarios' },
+        { module: MODULES.ROLES, path: '/admin/roles', label: 'Roles' },
+        { module: MODULES.RUTAS, path: '/admin/rutas', label: 'Gestión de Rutas' },
+        { module: MODULES.PARADEROS, path: '/admin/paraderos', label: 'Gestión de Paraderos' },
+        { module: MODULES.EMPRESAS, path: '/admin/empresas', label: 'Empresas' },
       ]
     },
-    // ---- Operaciones / Flota ----
+
     {
       label: 'Servicios',
       items: [
-        { module: MODULES.RUTAS,          path: '/rutas',                    label: 'Mapa de Rutas'  },
-        { module: MODULES.PARADEROS,      path: '/paradero',                 label: 'Paraderos Cercanos' },
-        { module: MODULES.BUSES,          path: '/admin/buses',              label: 'Buses'          },
-        { module: MODULES.CONDUCTORES,    path: '/admin/conductores',        label: 'Conductores'    },
-        { module: MODULES.TURNOS,         path: '/admin/turnos',             label: 'Turnos'         },
-        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones',     label: 'Programaciones' },
-        { module: MODULES.INCIDENTES,     path: '/admin/incidentes',         label: 'Monitor de Incidentes' },
+        { module: MODULES.RUTAS, path: '/rutas', label: 'Mapa de Rutas' },
+        { module: MODULES.PARADEROS, path: '/paradero', label: 'Paraderos Cercanos' },
+        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
+        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
+
+        // BLOQUEADOS temporalmente para conductor
+        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
+        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
+
+        // ESTE sí queda visible
+        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Monitor de Incidentes' },
       ]
     },
-    // ---- Conductor (visible solo con rol Conductor) ----
+
     {
       label: 'Mi Turno',
       items: [
-        { module: MODULES.TURNO_CONDUCTOR, path: '/conductor/turno',         label: 'Turno Actual'   },
-        { module: MODULES.INCIDENTES,      path: '/incidentes/crear',        label: 'Reportar Incidente' },
+        { module: MODULES.TURNO_CONDUCTOR, path: '/conductor/turno', label: 'Turno Actual' },
+        { module: MODULES.INCIDENTES, path: '/incidentes/crear', label: 'Reportar Incidente' },
       ]
     },
-    // ---- Ciudadano / Pasajero ----
+
     {
       label: 'Mis Viajes',
       items: [
-        { module: MODULES.BOLETOS,        path: '/abordaje',                 label: 'Abordar Bus'    },
-        { module: MODULES.BOLETOS,        path: '/boletos',                  label: 'Mis Boletos'        },
-        { module: MODULES.VIAJES,         path: '/viajes/historial',         label: 'Historial'      },
-        { module: MODULES.CARTERA,        path: '/cartera/recarga',          label: 'Mi Cartera'        },
+        { module: MODULES.BOLETOS, path: '/abordaje', label: 'Abordar Bus' },
+        { module: MODULES.BOLETOS, path: '/boletos', label: 'Mis Boletos' },
+        { module: MODULES.VIAJES, path: '/viajes/historial', label: 'Historial' },
+        { module: MODULES.CARTERA, path: '/cartera/recarga', label: 'Mi Cartera' },
       ]
     },
-    // ---- Analíticas ----
+
     {
       label: 'Analíticas',
       items: [
-        { module: MODULES.ANALITICAS,     path: '/analiticas/ingresos',      label: 'Ingresos'       },
-        { module: MODULES.ANALITICAS,     path: '/analiticas/rango-etario',  label: 'Rango Etario'   },
-        { module: MODULES.ANALITICAS,     path: '/analiticas/incidentes',    label: 'Incidentes'     },
+        { module: MODULES.ANALITICAS, path: '/analiticas/ingresos', label: 'Ingresos' },
+        { module: MODULES.ANALITICAS, path: '/analiticas/rango-etario', label: 'Rango Etario' },
+        { module: MODULES.ANALITICAS, path: '/analiticas/incidentes', label: 'Incidentes' },
       ]
     },
-    // ---- Social ----
+
     {
       label: 'Social',
       items: [
-        { module: MODULES.MENSAJES,       path: '/mensajes',                 label: 'Mensajes'       },
-        { module: MODULES.GRUPOS,         path: '/grupos',                   label: 'Grupos'         },
-        { module: MODULES.RESENAS,        path: '/resenas',                  label: 'Reseñas'        },
+        { module: MODULES.MENSAJES, path: '/mensajes', label: 'Mensajes' },
+        { module: MODULES.GRUPOS, path: '/grupos', label: 'Grupos' },
+        { module: MODULES.RESENAS, path: '/resenas', label: 'Reseñas' },
       ]
     }
   ];
@@ -97,22 +119,46 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </NavLink>
 
         {GROUPS.map((group, groupIdx) => {
-          if (group.label === 'Administración' && activeRole?.name !== 'Admin' && activeRole?.name !== 'ADMIN') {
+
+          if (
+            group.label === 'Administración' &&
+            activeRole?.name !== 'Admin' &&
+            activeRole?.name !== 'ADMIN'
+          ) {
             return null;
           }
-          const visibleItems = group.items.filter(item => canRead(item.module));
+
+          const visibleItems = group.items.filter(item => {
+            return (
+              canRead(item.module) &&
+              !isTemporarilyBlocked(item.module)
+            );
+          });
+
           if (visibleItems.length === 0) return null;
 
           return (
             <div key={groupIdx}>
-              <div className="nav-group-label" style={{ padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <div
+                className="nav-group-label"
+                style={{
+                  padding: '1.5rem 1rem 0.5rem',
+                  fontSize: '0.7rem',
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}
+              >
                 {group.label}
               </div>
+
               {visibleItems.map(item => (
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) =>
+                    `nav-item ${isActive ? 'active' : ''}`
+                  }
                   onClick={onClose}
                 >
                   <span>{item.label}</span>
