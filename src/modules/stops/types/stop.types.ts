@@ -6,10 +6,16 @@ export interface Stop {
   id: string;
   codigo: string;
   nombre: string;
+  tipo: string;
   latitud: number;
   longitud: number;
-  tipo: string;
-  estado: boolean;
+
+  rutaParaderos?: {
+    ruta: {
+      id: string;
+      nombre: string;
+    };
+  }[];
 }
 
 export interface NearbyStop extends Stop {
