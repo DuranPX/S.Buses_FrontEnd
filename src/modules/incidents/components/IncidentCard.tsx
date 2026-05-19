@@ -36,14 +36,14 @@ export const IncidentCard = ({ incident, isAdmin, onStatusChange, onUpdate }: Pr
   const statusColor = estadoColor[incident.estado]    ?? '#94a3b8';
   const gColor      = gravedadColor[incident.gravedad] ?? '#94a3b8';
   const todasLasFotos = incident.incidenteBuses?.flatMap(ib => ib.fotos ?? []) ?? [];
-  const comentarios   = incident.comentarios ?? [];
+  const [comentarios, setComentarios] = useState(incident.comentarios ?? []);
 
   const handleAddComentario = async () => {
     if (!nuevoComentario.trim()) return;
-
     setEnviando(true);
     try {
       const updated = await incidentsService.addComentario(incident.id, nuevoComentario);
+      setComentarios(updated.comentarios ?? []);
       setNuevoComentario('');
       onUpdate?.(updated);
     } catch {
@@ -51,8 +51,6 @@ export const IncidentCard = ({ incident, isAdmin, onStatusChange, onUpdate }: Pr
     } finally {
       setEnviando(false);
     }
-
-    window.location.reload();
   };
 
   return (

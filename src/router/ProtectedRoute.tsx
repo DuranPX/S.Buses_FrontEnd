@@ -48,45 +48,16 @@ export const ProtectedRoute = ({
     );
   }
 
-  // =====================================================
-  // PROTECCIÓN ADMIN
-  // =====================================================
-
-  const pathname =
-    window.location.pathname;
-
-  const isAdminRoute =
-    pathname.startsWith('/admin');
-
-  const isIncidentesRoute =
-    pathname.startsWith(
-      '/admin/incidentes',
-    );
-
-  const isProgramacionesRoute =
-    pathname.startsWith(
-      '/admin/programaciones',
-    );
+  // Protección adicional estricta: Si la ruta es de administración (y no es la respuesta pública de ePayco), solo entra el Admin
+  const isAdminRoute = window.location.pathname.startsWith('/admin');
 
   if (
     isAdminRoute &&
-    !isIncidentesRoute &&
-    !isProgramacionesRoute &&
-    (!permission ||
-      permission.module !== 'cartera')
+    (!permission || permission.module !== 'cartera')
   ) {
-    if (
-      activeRole.name !== 'Admin' &&
-      activeRole.name !== 'ADMIN'
-    ) {
-      return (
-        <AccessDenied
-          module={
-            permission?.module ||
-            ('admin' as any)
-          }
-        />
-      );
+    const rolesPermitidos = ['Admin', 'ADMIN', 'Supervisor', 'SUPERVISOR'];
+    if (!rolesPermitidos.includes(activeRole.name)) {
+      return <AccessDenied module={permission?.module || ('admin' as any)} />;
     }
   }
 
