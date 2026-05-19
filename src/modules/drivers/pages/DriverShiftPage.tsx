@@ -9,7 +9,6 @@ const DriverShiftPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Si no tiene turno en curso, redirigir a iniciar
     if (!isLoading && shift?.estado !== 'EN_CURSO') {
       navigate('/conductor/turno/iniciar', { replace: true });
     }
@@ -21,21 +20,24 @@ const DriverShiftPage = () => {
 
   if (!shift || shift.estado !== 'EN_CURSO') return null;
 
-  const tInicio = new Date(shift.fecha_inicio_real || shift.fecha_inicio_programada).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  const tInicio = new Date(shift.fecha_inicio_real || shift.fecha_inicio_programada)
+    .toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '0 0 0.5rem', color: '#f8fafc' }}>
             Turno en Curso
           </h1>
           <p style={{ color: '#34d399', margin: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#34d399', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#34d399', borderRadius: '50%' }} />
             Transmitiendo GPS Activamente
           </p>
         </div>
-        <button 
+        <button
           onClick={async () => {
             if (window.confirm('¿Estás seguro de finalizar el turno ahora?')) {
               await endShift();
@@ -49,10 +51,11 @@ const DriverShiftPage = () => {
         </button>
       </div>
 
+      {/* Cards de info */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Bus Asignado</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f8fafc', marginTop: '0.25rem' }}>{shift.bus_placa}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f8fafc', marginTop: '0.25rem' }}>{shift.bus_placa || '—'}</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Hora Inicio Real</span>
@@ -60,10 +63,25 @@ const DriverShiftPage = () => {
         </div>
       </div>
 
+      {/* ── Botón de reporte de incidente ── */}
+      <div style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h3 style={{ margin: '0 0 0.25rem', color: '#fbbf24', fontWeight: 700 }}>¿Ocurrió un incidente?</h3>
+          <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>
+            Reporta mecánicos, accidentes, retrasos u otros eventos durante tu turno.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/incidentes/crear', { state: { busId: shift.bus_id, turnoId: shift.id } })}
+          style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)', padding: '0.8rem 1.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', marginLeft: '1rem' }}
+        >
+          🚨 Reportar Incidente
+        </button>
+      </div>
+
       <MockGPSController />
 
-      <div style={{ flex: 1, background: '#1e293b', borderRadius: '1rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Placeholder para un mapa interno del conductor si fuera necesario */}
+      <div style={{ flex: 1, background: '#1e293b', borderRadius: '1rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
         <div style={{ color: '#64748b', textAlign: 'center' }}>
           <span style={{ fontSize: '3rem', display: 'block', marginBottom: '1rem' }}>🗺️</span>
           Vista de navegación en construcción

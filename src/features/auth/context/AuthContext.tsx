@@ -39,30 +39,27 @@ const DriverLicenseModal = ({ personaId, onSuccess, onClose }: { personaId: stri
         <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
           Para completar tu perfil operativo y poder recibir la asignación de tu empresa y turnos, ingresa tu número de Licencia de Conducir.
         </p>
-
         {error && (
           <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#f87171', padding: '0.8rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontWeight: 600, fontSize: '0.85rem' }}>
             {error}
           </div>
         )}
-
         <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '0.5rem', fontWeight: 600 }}>Número de Licencia</label>
-            <input 
+            <input
               type="text" placeholder="Ej. LIC-12345678" value={licencia} onChange={e => setLicencia(e.target.value)}
               style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem', fontWeight: 600 }}
             />
           </div>
-
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button 
+            <button
               type="button" onClick={onClose} disabled={isSubmitting}
               style={{ flex: 1, padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
             >
               Más tarde
             </button>
-            <button 
+            <button
               type="submit" disabled={isSubmitting}
               style={{ flex: 2, padding: '0.8rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontWeight: 700, boxShadow: '0 4px 12px rgba(99,102,241,0.3)', opacity: isSubmitting ? 0.7 : 1 }}
             >
@@ -104,10 +101,14 @@ export interface User {
   phone?: string;
   address?: string;
   photo?: string;
+  // ── NUEVO: fecha de nacimiento para métricas de rango etario ──
+  birthDate?: string;
   roles: Role[];
   authExternals?: AuthExternal[];
   ciudadanoId?: string;
   conductorId?: string;
+  // ID de persona en ms-business (necesario para PATCH /persona/:id)
+  personaId?: string;
 }
 
 interface AuthContextType {
@@ -157,7 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const payload = decodeJWT(token);
     if (!payload) return;
 
-    // ID Resolution: Prioritize 'user_id' from JWT, then check object/fallback
     const userId = payload.user_id || payload._id || payload.id || explicitUser?.id || explicitUser?._id || user?.id;
 
     if (!userId || userId === "user-1") {
@@ -168,20 +168,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const name = explicitUser?.name || payload?.name || user?.name || email.split("@")[0];
     const lastName = explicitUser?.lastName || payload?.lastName || user?.lastName || "";
     const photo = explicitUser?.photo || payload?.photo || user?.photo || null;
-    
-    // IMPORTANTE: No sobreescribir con vacío si el dato ya existe en memoria o en el objeto explícito
+
     const phone = explicitUser?.phone || user?.phone || "";
     const address = explicitUser?.address || user?.address || "";
     const authExternals = explicitUser?.authExternals || user?.authExternals || [];
     const ciudadanoId = explicitUser?.ciudadanoId || user?.ciudadanoId;
     const conductorId = explicitUser?.conductorId || user?.conductorId;
-    
+    // ── NUEVO: preservar birthDate y personaId ──
+    const birthDate = explicitUser?.birthDate || user?.birthDate;
+    const personaId = explicitUser?.personaId || user?.personaId;
+
     const tokenType = payload?.token_type;
 
     if (tokenType === "general") {
-      // 1. TOKEN TEMPORAL ESPERANDO SELECCIÓN DE ROL
       const rawRoles: string[] = payload?.roles || [];
-      
+
       const draftRoles: Role[] = rawRoles.map((r: string) => ({
         id: `role-${r.toLowerCase()}`,
         name: r,
@@ -190,15 +191,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         permisos: []
       }));
 
-      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: draftRoles, authExternals, ciudadanoId, conductorId });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: draftRoles, authExternals, ciudadanoId, conductorId, birthDate, personaId });
       setActiveRole(null);
 
       if (rawRoles.length === 1) {
         try {
           const result = await selectRole(rawRoles[0]);
           if (result && result.token && result.role) {
-            // Pasamos el usuario actual completo a la siguiente fase para no perder datos parciales
-            return await syncSession(result.token, email, result.role, { id: userId, name, lastName, email, phone, address, photo, authExternals, ciudadanoId, conductorId });
+            return await syncSession(result.token, email, result.role, { id: userId, name, lastName, email, phone, address, photo, authExternals, ciudadanoId, conductorId, birthDate, personaId });
           }
         } catch (error) {
           handleSetActiveRole(draftRoles[0]);
@@ -206,9 +206,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
     } else if (tokenType === "auth_role" || explicitRole) {
-      // 2. TOKEN DEFINITIVO
       const backendRole = explicitRole;
-      
+
       const roleObj: Role = backendRole ? {
         id: backendRole.id || backendRole._id || `role-${backendRole.nombre?.toLowerCase() || 'default'}`,
         name: backendRole.nombre || backendRole.name || "ROLE",
@@ -223,15 +222,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         permisos: []
       };
 
-      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals, ciudadanoId, conductorId });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals, ciudadanoId, conductorId, birthDate, personaId });
       handleSetActiveRole(roleObj);
-      // Sincronizar en background con ms-business (solo con token definitivo)
+
       syncBusinessUser().then((data) => {
         if (data) {
-          if (data.ciudadanoId || data.conductorId) {
-            setUser(prev => prev ? { ...prev, ciudadanoId: data.ciudadanoId, conductorId: data.conductorId } : null);
+          if (data.ciudadanoId || data.conductorId || data.personaId) {
+            setUser(prev => prev ? {
+              ...prev,
+              ciudadanoId: data.ciudadanoId,
+              conductorId: data.conductorId,
+              // ── NUEVO: guardar personaId, birthDate y nombre real desde ms-business ──
+              personaId: data.personaId || prev.personaId,
+              birthDate: data.birthDate || prev.birthDate,
+              // Si ms-business devuelve el nombre real, actualizar
+              name: data.firstName || prev.name,
+              lastName: data.lastName || prev.lastName,
+            } : null);
           }
-          // Verificar si es conductor sin licencia
           const isDriver = data.roles?.includes("Conductor") || data.roles?.includes("CONDUCTOR") || roleObj.name.toUpperCase() === "CONDUCTOR";
           if (isDriver && !data.conductorId) {
             setSyncPersonaId(data.id || userId);
@@ -240,7 +248,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }).catch(() => {});
     } else {
-      // Compatibility fallback
       const rawRoles = payload?.roles || ["USER"];
       const fallbackRole: Role = {
         id: `role-${rawRoles[0].toLowerCase()}`,
@@ -250,32 +257,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         permisos: []
       };
 
-      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [fallbackRole], authExternals });
+      setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [fallbackRole], authExternals, birthDate, personaId });
       handleSetActiveRole(fallbackRole);
     }
-
   };
 
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("token");
-      
+
       if (token) {
         const payload = decodeJWT(token);
         if (payload?.token_type === "auth_role") {
           try {
-            // Rehidratar la memoria remotamente via API en pro del POLP
             const { getMe } = await import("../services/auth.service");
             const sessionData = await getMe();
             await syncSession(token, undefined, sessionData.role, sessionData.user);
           } catch(err) {
             console.error("Error validando sesión:", err);
-            // Fallback si la session venció
             setUser(null);
             setActiveRole(null);
           }
         } else {
-          // Token Temporal normal
           await syncSession(token);
         }
       } else {
@@ -294,11 +297,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setActiveRole(null);
     localStorage.removeItem("activeRole");
-    // El servicio de logout se encarga de llamar al backend y limpiar localStorage
     logoutService();
   };
 
-  /** Actualiza parcialmente el usuario en memoria (usado por perfil, desvinculación OAuth, etc.) */
   const updateUser = (updates: Partial<User>) => {
     setUser(prev => prev ? { ...prev, ...updates } : null);
   };
@@ -320,7 +321,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={value}>
       {children}
       {showLicenseModal && syncPersonaId && (
-        <DriverLicenseModal 
+        <DriverLicenseModal
           personaId={syncPersonaId}
           onSuccess={(conductorId) => {
             setUser(prev => prev ? { ...prev, conductorId } : null);

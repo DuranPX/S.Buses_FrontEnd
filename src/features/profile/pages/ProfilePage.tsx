@@ -10,7 +10,8 @@ import azureLogo from "../../../assets/images/azure provider.png";
 import githubLogo from "../../../assets/images/github_provider.png";
 import InputField from "../../../shared/components/forms/InputField";
 
-import { changePassword } from "../../auth/services/auth.service";
+import { changePassword, updateUserProfile } from "../../auth/services/auth.service";
+import { businessApi } from "../../../api/api";
 
 const providerLogos: Record<string, string> = {
   google: googleLogo,
@@ -33,6 +34,145 @@ const validatePassword = (password: string): string | null => {
   return null;
 };
 
+// ── Modal de edición de información personal ──────────────────────────────────
+interface EditProfileModalProps {
+  user: any;
+  onClose: () => void;
+  onSaved: (updates: any) => void;
+}
+
+const EditProfileModal = ({ user, onClose, onSaved }: EditProfileModalProps) => {
+  const [form, setForm] = useState({
+    name: user.name || "",
+    lastName: user.lastName || "",
+    phone: user.phone || "",
+    address: user.address || "",
+    birthDate: user.birthDate ? user.birthDate.slice(0, 10) : "",
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    if (!form.lastName.trim()) { setError("El apellido es obligatorio."); return; }
+    setError(null);
+    setIsSaving(true);
+    try {
+      // 1. Actualizar en ms-security
+      await updateUserProfile(user.id, {
+        name: form.name.trim(),
+        lastName: form.lastName.trim(),
+        phone: form.phone.trim(),
+        address: form.address.trim(),
+      });
+
+      // 2. Sincronizar birthDate (y nombre) en ms-business si hay personaId
+      if (user.personaId) {
+        try {
+          await businessApi.patch(`/persona/${user.personaId}`, {
+            firstName: form.name.trim(),
+            lastName: form.lastName.trim(),
+            ...(form.birthDate ? { birthDate: form.birthDate } : {}),
+            ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
+          });
+        } catch (bizErr: any) {
+          console.warn("No se pudo sincronizar con ms-business:", bizErr?.response?.data?.message || bizErr.message);
+        }
+      }
+
+      onSaved({
+        name: form.name.trim(),
+        lastName: form.lastName.trim(),
+        phone: form.phone.trim(),
+        address: form.address.trim(),
+        birthDate: form.birthDate || undefined,
+      });
+      showAlert.success("Perfil actualizado", "Tu información personal fue guardada correctamente.");
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || "No se pudo guardar. Intenta de nuevo.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+    }}>
+      <div className="glass" style={{
+        padding: '2rem', maxWidth: '480px', width: '100%',
+        borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '1rem'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>Editar información personal</h2>
+          <button onClick={onClose} disabled={isSaving}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <InputField label="Nombre" type="text" value={form.name}
+            onChange={handleChange("name")} placeholder="Tu nombre" required />
+          <InputField label="Apellido" type="text" value={form.lastName}
+            onChange={handleChange("lastName")} placeholder="Tu apellido" required />
+        </div>
+
+        <InputField label="Teléfono" type="tel" value={form.phone}
+          onChange={handleChange("phone")} placeholder="+57 300 000 0000" />
+
+        <InputField label="Dirección" type="text" value={form.address}
+          onChange={handleChange("address")} placeholder="Tu dirección" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Fecha de nacimiento
+          </label>
+          <input
+            type="date"
+            value={form.birthDate}
+            onChange={handleChange("birthDate")}
+            max={new Date().toISOString().split('T')[0]}
+            style={{
+              padding: '0.6rem 0.9rem', borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.05)', color: 'inherit', fontSize: '0.9rem',
+              colorScheme: 'dark',
+            }}
+          />
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            Usada para métricas de rango etario. No es pública.
+          </span>
+        </div>
+
+        {error && (
+          <div style={{ color: '#ef4444', fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <button onClick={onClose} disabled={isSaving}
+            style={{ flex: 1, padding: '0.65rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 600 }}>
+            Cancelar
+          </button>
+          <Button label={isSaving ? "Guardando..." : "Guardar cambios"}
+            onClick={handleSave} disabled={isSaving}
+            style={{ flex: 2 }} />
+        </div>
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const ProfilePage = () => {
   const { user, activeRole, updateUser } = useAuth();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
@@ -44,6 +184,7 @@ export const ProfilePage = () => {
   const [isSettingPassword, setIsSettingPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -63,9 +204,7 @@ export const ProfilePage = () => {
           const sessionData = await getMe();
           if (sessionData?.user) updateUser(sessionData.user);
         } catch {
-          updateUser({
-            authExternals: (user.authExternals || []).filter(a => a.proveedor !== provider)
-          });
+          updateUser({ authExternals: (user.authExternals || []).filter(a => a.proveedor !== provider) });
         }
       }
       showAlert.success("Desvinculado", result?.message || `Cuenta de ${providerNames[provider] || provider} desvinculada exitosamente.`);
@@ -81,7 +220,7 @@ export const ProfilePage = () => {
       setChangingPassword(true);
       await changePassword(user.id, passwordForm);
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (err) {
+    } catch {
       // El error ya lo maneja el servicio
     } finally {
       setChangingPassword(false);
@@ -136,22 +275,21 @@ export const ProfilePage = () => {
     setPasswordError(null);
   };
 
+  const formatBirthDate = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    try {
+      return new Date(dateStr + 'T00:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+    } catch { return dateStr; }
+  };
+
   const linkedProviders = user.authExternals || [];
 
   const passwordModal = showPasswordModal && (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.7)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <form
         className="glass"
         onSubmit={(e) => { e.preventDefault(); handleSetPasswordAndUnlink(); }}
-        style={{
-          padding: '2.5rem', maxWidth: '420px', width: '90%',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          borderRadius: '16px'
-        }}
+        style={{ padding: '2.5rem', maxWidth: '420px', width: '90%', display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: '16px' }}
       >
         <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.3rem' }}>Crea una contraseña primero</h2>
         <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.85rem', marginBottom: '2rem' }}>
@@ -159,30 +297,12 @@ export const ProfilePage = () => {
           <strong style={{ color: 'white' }}>{providerNames[pendingProvider || ''] || pendingProvider}</strong>,
           necesitas crear una contraseña para no perder el acceso.
         </p>
-        <InputField
-          label="Nueva contraseña"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Mínimo 8 caracteres"
-          required
-          style={{ width: '100%' }}
-        />
-        <InputField
-          label="Confirmar contraseña"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Repite la contraseña"
-          required
-          style={{ width: '100%', marginTop: '1rem' }}
-        />
+        <InputField label="Nueva contraseña" type="password" value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 8 caracteres" required style={{ width: '100%' }} />
+        <InputField label="Confirmar contraseña" type="password" value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repite la contraseña" required style={{ width: '100%', marginTop: '1rem' }} />
         {passwordError && (
-          <div style={{
-            width: '100%', marginTop: '0.75rem', color: '#ef4444',
-            fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)',
-            padding: '0.5rem 0.75rem', borderRadius: '8px'
-          }}>
+          <div style={{ width: '100%', marginTop: '0.75rem', color: '#ef4444', fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
             {passwordError}
           </div>
         )}
@@ -192,28 +312,28 @@ export const ProfilePage = () => {
           <li>Al menos un número</li>
           <li>Al menos un carácter especial (@$!%*?&)</li>
         </ul>
-        <Button
-          type="submit"
-          label={isSettingPassword ? "Guardando..." : "Crear contraseña y desvincular"}
-          disabled={isSettingPassword || !newPassword || !confirmPassword}
-          style={{ width: '100%', marginTop: '1.5rem' }}
-        />
-        <button
-          type="button"
-          onClick={handleCloseModal}
-          disabled={isSettingPassword}
-          style={{ marginTop: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}
-        >
+        <Button type="submit" label={isSettingPassword ? "Guardando..." : "Crear contraseña y desvincular"}
+          disabled={isSettingPassword || !newPassword || !confirmPassword} style={{ width: '100%', marginTop: '1.5rem' }} />
+        <button type="button" onClick={handleCloseModal} disabled={isSettingPassword}
+          style={{ marginTop: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
           Cancelar
         </button>
       </form>
     </div>
   );
 
-
   return (
     <div className="profile-page" style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       {passwordModal}
+
+      {showEditProfile && (
+        <EditProfileModal
+          user={user}
+          onClose={() => setShowEditProfile(false)}
+          onSaved={(updates) => updateUser(updates)}
+        />
+      )}
+
       <h1 style={{ marginBottom: '0.5rem' }}>Perfil</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Gestiona tu información personal y cuentas vinculadas.</p>
 
@@ -221,20 +341,7 @@ export const ProfilePage = () => {
       <FormCard title="Información Personal">
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           {/* Avatar */}
-          <div style={{
-            width: '100px',
-            height: '100px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            border: '3px solid rgba(255,255,255,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,0.05)',
-            fontSize: '2.5rem',
-            fontWeight: 700,
-            flexShrink: 0
-          }}>
+          <div style={{ width: '100px', height: '100px', borderRadius: '50%', overflow: 'hidden', border: '3px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', fontSize: '2.5rem', fontWeight: 700, flexShrink: 0 }}>
             {user.photo ? (
               <img src={user.photo} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
@@ -243,31 +350,45 @@ export const ProfilePage = () => {
           </div>
 
           {/* Datos */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', minWidth: '300px' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Nombre</label>
-              <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.name}</p>
+          <div style={{ flex: 1, minWidth: '300px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Nombre</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.name}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Apellido</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.lastName || '—'}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.email}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Teléfono</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.phone || '—'}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Dirección</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.address || '—'}</p>
+              </div>
+              {/* Fecha de nacimiento */}
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Fecha de nacimiento</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{formatBirthDate(user.birthDate)}</p>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Rol Activo</label>
+                <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem', color: 'var(--accent-color, #3b82f6)' }}>{activeRole?.name || '—'}</p>
+              </div>
             </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Apellido</label>
-              <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.lastName || '—'}</p>
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</label>
-              <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.email}</p>
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Teléfono</label>
-              <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.phone || '—'}</p>
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Dirección</label>
-              <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem' }}>{user.address || '—'}</p>
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Rol Activo</label>
-              <p style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.25rem', color: 'var(--accent-color, #3b82f6)' }}>{activeRole?.name || '—'}</p>
-            </div>
+
+            {/* Botón Editar */}
+            <Button
+              label="✏️  Editar información"
+              onClick={() => setShowEditProfile(true)}
+              style={{ alignSelf: 'flex-start' }}
+            />
           </div>
         </div>
       </FormCard>
@@ -278,76 +399,28 @@ export const ProfilePage = () => {
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
             Gestiona los proveedores externos con los que puedes iniciar sesión.
           </p>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {['google', 'microsoft', 'github'].map(provider => {
               const linked = linkedProviders.find(a => a.proveedor === provider);
               const isUnlinking = unlinkingProvider === provider;
-
               return (
-                <div key={provider} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '1rem 1.2rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${linked ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)'}`,
-                  transition: 'all 0.2s ease'
-                }}>
+                <div key={provider} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.2rem', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.03)', border: `1px solid ${linked ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)'}`, transition: 'all 0.2s ease' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <img
-                      src={providerLogos[provider]}
-                      alt={provider}
-                      style={{ width: '28px', height: '28px', objectFit: 'contain' }}
-                    />
+                    <img src={providerLogos[provider]} alt={provider} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-                        {providerNames[provider] || provider}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {linked ? linked.email : 'No vinculada'}
-                      </div>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{providerNames[provider] || provider}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{linked ? linked.email : 'No vinculada'}</div>
                     </div>
                   </div>
-
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     {linked ? (
                       <>
-                        <span style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          color: '#22c55e',
-                          background: 'rgba(34,197,94,0.1)',
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '12px'
-                        }}>
-                          VINCULADA
-                        </span>
-                        <Button
-                          label={isUnlinking ? "Desvinculando..." : "Desvincular"}
-                          onClick={() => handleUnlink(provider)}
-                          disabled={isUnlinking}
-                          style={{
-                            backgroundColor: 'rgba(239,68,68,0.1)',
-                            color: '#ef4444',
-                            fontSize: '0.75rem',
-                            padding: '0.4rem 0.8rem',
-                            opacity: isUnlinking ? 0.5 : 1
-                          }}
-                        />
+                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>VINCULADA</span>
+                        <Button label={isUnlinking ? "Desvinculando..." : "Desvincular"} onClick={() => handleUnlink(provider)} disabled={isUnlinking}
+                          style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '0.75rem', padding: '0.4rem 0.8rem', opacity: isUnlinking ? 0.5 : 1 }} />
                       </>
                     ) : (
-                      <span style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        color: 'var(--text-muted)',
-                        background: 'rgba(255,255,255,0.05)',
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '12px'
-                      }}>
-                        NO VINCULADA
-                      </span>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>NO VINCULADA</span>
                     )}
                   </div>
                 </div>
@@ -361,112 +434,55 @@ export const ProfilePage = () => {
       <div style={{ marginTop: '2rem' }}>
         <FormCard title="Seguridad">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '1rem',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>
                 <div style={{ fontWeight: 600 }}>Autenticación de Dos Factores</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Se envía un código a tu email en cada inicio de sesión.</div>
               </div>
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                color: '#22c55e',
-                background: 'rgba(34,197,94,0.1)',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '12px'
-              }}>
-                ACTIVO
-              </span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '0.25rem 0.75rem', borderRadius: '12px' }}>ACTIVO</span>
             </div>
 
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '1rem',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>
                 <div style={{ fontWeight: 600 }}>Todos tus roles</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Perfiles de acceso asignados a tu cuenta.</div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {user.roles.map(r => (
-                  <span key={r.id} style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    color: 'var(--accent-color)',
-                    background: 'rgba(59,130,246,0.1)',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '12px'
-                  }}>
+                  <span key={r.id} style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--accent-color)', background: 'rgba(59,130,246,0.1)', padding: '0.25rem 0.75rem', borderRadius: '12px' }}>
                     {r.name}
                   </span>
                 ))}
               </div>
             </div>
 
-            {/* Toggle Button for Password Change */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-              <Button 
+              <Button
                 label={showChangePassword ? "Cancelar cambio" : "Cambiar contraseña"}
                 onClick={() => setShowChangePassword(!showChangePassword)}
                 style={{ alignSelf: 'flex-start', backgroundColor: showChangePassword ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)' }}
               />
-
               {showChangePassword && (
-                <div style={{
-                  padding: '1rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.05)'
-                }}>
+                <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontWeight: 600, marginBottom: '1rem' }}>Cambiar Contraseña</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {["currentPassword", "newPassword", "confirmPassword"].map((field) => (
-                      <input
-                        key={field}
-                        type="password"
-                        autoComplete="new-password"
-                        placeholder={
-                          field === "currentPassword" ? "Contraseña actual"
-                          : field === "newPassword" ? "Nueva contraseña"
-                          : "Confirmar nueva contraseña"
-                        }
+                      <input key={field} type="password" autoComplete="new-password"
+                        placeholder={field === "currentPassword" ? "Contraseña actual" : field === "newPassword" ? "Nueva contraseña" : "Confirmar nueva contraseña"}
                         value={passwordForm[field as keyof typeof passwordForm]}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, [field]: e.target.value }))}
-                        style={{
-                          padding: '0.6rem 1rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          background: 'rgba(255,255,255,0.05)',
-                          color: 'inherit',
-                          fontSize: '0.9rem'
-                        }}
+                        style={{ padding: '0.6rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'inherit', fontSize: '0.9rem' }}
                       />
                     ))}
-                    <Button
-                      label={changingPassword ? "Actualizando..." : "Actualizar contraseña"}
-                      onClick={handleChangePassword}
-                      disabled={changingPassword}
-                      style={{ alignSelf: 'flex-end', marginTop: '0.5rem' }}
-                    />
+                    <Button label={changingPassword ? "Actualizando..." : "Actualizar contraseña"}
+                      onClick={handleChangePassword} disabled={changingPassword}
+                      style={{ alignSelf: 'flex-end', marginTop: '0.5rem' }} />
                   </div>
                 </div>
               )}
             </div>
           </div>
         </FormCard>
-
       </div>
     </div>
   );
