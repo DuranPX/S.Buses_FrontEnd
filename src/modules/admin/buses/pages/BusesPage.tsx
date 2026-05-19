@@ -238,6 +238,13 @@ const BusesPage = () => {
                         <span>QR 🔍</span>
                       </button>
                       <button
+                        onClick={() => navigate(`/admin/buses/incidencias/${bus.id}`)}
+                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', padding: '0.5rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                        title="Ver Incidentes"
+                      >
+                        <span>⚠️ Incidentes</span>
+                      </button>
+                      <button
                         onClick={() => handleOpenEdit(bus)}
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', padding: '0.5rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                         title="Editar Bus"

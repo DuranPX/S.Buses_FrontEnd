@@ -54,10 +54,9 @@ export const incidentsService = {
     return response.data;
   },
 
-  // Obtener incidentes por bus
   getByBus: async (bus_id: string): Promise<IncidenteBus[]> => {
     const response = await businessApi.get<IncidenteBus[]>(
-      `/incidente-bus/incidente/${bus_id}`,
+      `/incidente-bus/bus/${bus_id}`,
     );
     return response.data;
   },

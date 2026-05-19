@@ -29,14 +29,13 @@ export const ProtectedRoute = ({ children, permission }: ProtectedRouteProps) =>
 
   // Protección adicional estricta: Si la ruta es de administración (y no es la respuesta pública de ePayco), solo entra el Admin
   const isAdminRoute = window.location.pathname.startsWith('/admin');
-  const isIncidentesRoute = window.location.pathname.startsWith('/admin/incidentes');
 
   if (
     isAdminRoute &&
-    !isIncidentesRoute &&
     (!permission || permission.module !== 'cartera')
   ) {
-    if (activeRole.name !== 'Admin' && activeRole.name !== 'ADMIN') {
+    const rolesPermitidos = ['Admin', 'ADMIN', 'Supervisor', 'SUPERVISOR'];
+    if (!rolesPermitidos.includes(activeRole.name)) {
       return <AccessDenied module={permission?.module || ('admin' as any)} />;
     }
   }

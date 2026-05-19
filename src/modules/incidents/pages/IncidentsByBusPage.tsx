@@ -193,8 +193,8 @@ const IncidentsByBusPage = () => {
                       ? { ...ib, incidente: updated }
                       : ib
                   )
-              );
-            }}
+                );
+              }}
             />
           ))}
         </div>
