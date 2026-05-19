@@ -871,8 +871,7 @@ const AbordajePage = () => {
 
             refreshWallet().catch(() => { });
             setStep('exito');
-
-
+          
             navigate('/boletos');
 
         } catch (e: any) {
