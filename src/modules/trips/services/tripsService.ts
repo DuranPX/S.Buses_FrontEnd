@@ -82,7 +82,10 @@ export const tripsService = {
     return adaptBoleto(data);
   },
 
-  finishTrip: async (_boletoId: string, _destinoId: string): Promise<Trip> => {
-    throw new Error('Funcionalidad pendiente de implementación (HU-004).');
+  finishTrip: async (boletoId: string, destinoId: string): Promise<Trip> => {
+    const { data } = await businessApi.patch(`/boletos/${boletoId}/descenso`, {
+      paraderoDescensoId: destinoId,
+    });
+    return adaptBoleto(data);
   },
 };
