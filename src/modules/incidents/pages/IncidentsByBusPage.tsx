@@ -185,13 +185,14 @@ const IncidentsByBusPage = () => {
               key={inc.id}
               incident={inc}
               isAdmin
-              onStatusChange={handleStatusChange}onUpdate={(updated) => {
-              setIncidenteBuses(prev =>
-                prev.map(ib =>
-                  ib.incidente.id === updated.id
-                    ? { ...ib, incidente: updated }
-                    : ib
-                )
+              onStatusChange={handleStatusChange}
+              onUpdate={(updated) => {
+                setIncidenteBuses(prev =>
+                  prev.map(ib =>
+                    ib.incidente.id === updated.id
+                      ? { ...ib, incidente: updated }
+                      : ib
+                  )
               );
             }}
             />
