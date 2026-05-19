@@ -2,7 +2,12 @@ import { withDelay } from '../../../adapters/mockAdapter';
 import { MOCK_TURNOS } from '../../../mocks/trips.mock';
 import type { DriverShift, BusCondition } from '../types/driver.types';
 
-let memoryShifts = [...MOCK_TURNOS] as DriverShift[];
+let memoryShifts: DriverShift[] = MOCK_TURNOS.map(t => ({
+  ...t,
+  estado: t.estado === 'Programado' ? 'PROGRAMADO'
+        : t.estado === 'En_Curso'   ? 'EN_CURSO'
+        : 'FINALIZADO',
+}));
 
 export const driverMockService = {
   /**
@@ -11,7 +16,7 @@ export const driverMockService = {
   getCurrentShift: async (): Promise<DriverShift | null> => {
     await withDelay(null, 600);
     // Para simplificar, buscamos un turno asignado al conductor "c-001" que esté programado o en curso
-    const shift = memoryShifts.find(t => t.conductor_id === 'c-001' && t.estado !== 'Finalizado');
+    const shift = memoryShifts.find(t => t.conductor_id === 'c-001' && t.estado !== 'FINALIZADO');
     return shift || null;
   },
 
@@ -30,7 +35,7 @@ export const driverMockService = {
 
     const updated = {
       ...memoryShifts[index],
-      estado: 'En_Curso' as const,
+      estado: 'EN_CURSO' as const,
       fecha_inicio_real: new Date().toISOString(),
       observaciones: `Condición inicial: Combustible ${condition.nivel_combustible}%, Limpieza: ${condition.limpieza}`
     };
@@ -46,7 +51,7 @@ export const driverMockService = {
     await withDelay(null, 800);
     const index = memoryShifts.findIndex(t => t.id === shiftId);
     if (index > -1) {
-      memoryShifts[index].estado = 'Finalizado';
+      memoryShifts[index].estado = 'FINALIZADO';
       memoryShifts[index].fecha_fin_real = new Date().toISOString();
     }
   }

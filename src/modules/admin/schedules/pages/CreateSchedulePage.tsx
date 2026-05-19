@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { routesService } from '../../../routes/services/routesService';
 import { busesService, type Bus } from '../../buses/services/busesService';
-import { schedulesService, TipoRecurrencia, type CreateProgramacionDto } from '../services/schedulesService';
+import { EstadoProgramacion, schedulesService, TipoRecurrencia, type CreateProgramacionDto } from '../services/schedulesService';
 import type { Route } from '../../../routes/types/route.types';
 import { Loader } from '../../../../shared/components/ui/Loader';
 
@@ -21,6 +21,7 @@ const CreateSchedulePage = () => {
     fecha: new Date().toISOString().split('T')[0],
     hora_salida: '06:00',
     tipo_recurrencia: TipoRecurrencia.DIARIA,
+    estado: EstadoProgramacion.PROGRAMADO,
     tolerancia_minutos: 5,
   });
 
@@ -33,7 +34,7 @@ const CreateSchedulePage = () => {
         ]);
         setRoutes(routesRes);
         setBuses(busesRes);
-        
+
         if (routesRes.length > 0) setFormData(prev => ({ ...prev, ruta_id: routesRes[0].id }));
         if (busesRes.length > 0) setFormData(prev => ({ ...prev, bus_id: busesRes[0].id }));
       } catch (err: any) {
@@ -95,7 +96,7 @@ const CreateSchedulePage = () => {
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Ruta</label>
-          <select 
+          <select
             value={formData.ruta_id}
             onChange={e => setFormData({ ...formData, ruta_id: e.target.value })}
             style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
@@ -106,7 +107,7 @@ const CreateSchedulePage = () => {
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Bus</label>
-          <select 
+          <select
             value={formData.bus_id}
             onChange={e => setFormData({ ...formData, bus_id: e.target.value })}
             style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
@@ -122,41 +123,47 @@ const CreateSchedulePage = () => {
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Fecha</label>
-          <input 
-            type="date" 
+          <input
+            type="date"
             value={formData.fecha}
-            min={new Date().toISOString().split('T')[0]}
             onChange={e => setFormData({ ...formData, fecha: e.target.value })}
-            style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} 
+            style={{
+              width: '100%',
+              padding: '0.8rem',
+              borderRadius: '0.5rem',
+              background: 'rgba(0,0,0,0.3)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'white'
+            }}
           />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Hora de Salida</label>
-            <input 
-              type="time" 
+            <input
+              type="time"
               value={formData.hora_salida}
               onChange={e => setFormData({ ...formData, hora_salida: e.target.value })}
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} 
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
             />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Tolerancia (Minutos)</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={formData.tolerancia_minutos}
               min={0}
               max={30}
               onChange={e => setFormData({ ...formData, tolerancia_minutos: parseInt(e.target.value) })}
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} 
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
             />
           </div>
         </div>
 
         <div style={{ marginBottom: '2rem' }}>
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Recurrencia</label>
-          <select 
+          <select
             value={formData.tipo_recurrencia}
             onChange={e => setFormData({ ...formData, tipo_recurrencia: e.target.value as TipoRecurrencia })}
             style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
@@ -167,7 +174,20 @@ const CreateSchedulePage = () => {
           </select>
         </div>
 
-        <button 
+        <div style={{ marginBottom: '2rem' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Estado</label>
+          <select
+            value={formData.estado}
+            onChange={e => setFormData({ ...formData, estado: e.target.value as EstadoProgramacion })}
+            style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+          >
+            <option value={EstadoProgramacion.PROGRAMADO}>Programado</option>
+            <option value={EstadoProgramacion.EN_CURSO}>En Curso</option>
+            <option value={EstadoProgramacion.FINALIZADO}>Finalizado</option>
+          </select>
+        </div>
+
+        <button
           type="submit"
           disabled={isProcessing}
           style={{ width: '100%', background: '#6366f1', color: 'white', padding: '1rem', borderRadius: '0.5rem', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '1.1rem', opacity: isProcessing ? 0.7 : 1 }}

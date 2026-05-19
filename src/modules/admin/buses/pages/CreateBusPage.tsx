@@ -66,7 +66,7 @@ const CreateBusPage = () => {
 
     try {
       // Generar URL para vista rápida de validación en frontend según requerimiento
-      const qrValue = `http://localhost:5173/validar/bus/${formData.placa}`;
+      const qrValue = `http://localhost:5000/validar/bus/${formData.placa}`;
 
       await busesService.create({
         ...formData,

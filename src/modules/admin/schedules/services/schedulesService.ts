@@ -8,6 +8,14 @@ export const TipoRecurrencia = {
 
 export type TipoRecurrencia = (typeof TipoRecurrencia)[keyof typeof TipoRecurrencia];
 
+export const EstadoProgramacion = {
+    PROGRAMADO: 'Programado',
+    EN_CURSO:   'En_Curso',
+    FINALIZADO: 'Finalizado',
+} as const;
+
+export type EstadoProgramacion = typeof EstadoProgramacion[keyof typeof EstadoProgramacion];
+
 export interface Programacion {
   id: string;
   ruta?: { id: string; nombre?: string; codigo?: string };
@@ -15,7 +23,7 @@ export interface Programacion {
   fecha: string;
   hora_salida: string;
   tipo_recurrencia: string;
-  estado: string;
+  estado: EstadoProgramacion;
   pasajeros_actuales: number;
   tolerancia_minutos: number;
 }
@@ -26,6 +34,7 @@ export interface CreateProgramacionDto {
   fecha: string;
   hora_salida: string;
   tipo_recurrencia: string;
+  estado: EstadoProgramacion;
   tolerancia_minutos?: number;
 }
 

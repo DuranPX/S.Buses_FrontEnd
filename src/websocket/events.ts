@@ -30,6 +30,7 @@ export const WS_EVENTS = {
 
   // --- Conductores / Turnos ---
   SHIFT_STARTED: 'shift_started',
+  SHIFT_ENDED: 'shift_ended',
   DRIVER_LOCATION_UPDATED: 'driver_location_updated',
   BUS_LOCATION_UPDATED: 'bus_location_updated',
 

@@ -76,6 +76,7 @@ export interface Ticket {
 
   // Economía
   monto_pagado: number;
+  montoCobrado?: number; 
 
   // Fechas y Tiempos
   fecha_emision: string;
