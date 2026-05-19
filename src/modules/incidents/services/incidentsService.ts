@@ -53,6 +53,7 @@ export const incidentsService = {
     const response = await businessApi.get<Incidente[]>('/incidentes');
     return response.data;
   },
+  
 
   getByBus: async (bus_id: string): Promise<IncidenteBus[]> => {
     const response = await businessApi.get<IncidenteBus[]>(

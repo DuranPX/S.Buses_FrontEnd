@@ -37,18 +37,16 @@ export function mapBoletoToTicket(raw: BoletoRaw): Ticket {
 }
 
 export const ticketsService = {
-  getMyTickets: async (ciudadanoId?: string): Promise<Ticket[]> => {
-    // El backend extrae la info del JWT ahora, pero este endpoint findAll
-    // asume traer todo si somos admin. Mantenemos el filtro temporal.
-    const res = await businessApi.get<BoletoRaw[]>('/boletos');
-    const raws = res.data;
-    const filtered = ciudadanoId
-      ? raws.filter(b => b.ciudadano?.id === ciudadanoId)
-      : raws;
-    return filtered
-      .map(mapBoletoToTicket)
-      .sort((a, b) => new Date(b.fecha_emision).getTime() - new Date(a.fecha_emision).getTime());
-  },
+  getMyTickets: async (): Promise<Ticket[]> => {
+  const res = await businessApi.get<BoletoRaw[]>('/boletos/me');
+
+  return res.data
+    .map(mapBoletoToTicket)
+    .sort((a, b) =>
+      new Date(b.hora_abordaje).getTime() -
+      new Date(a.hora_abordaje).getTime()
+    );
+},
 
   buyTicket: async (dto: CreateBoletoDto): Promise<Ticket> => {
     const res = await businessApi.post<BoletoRaw>('/boletos/abordaje', dto);

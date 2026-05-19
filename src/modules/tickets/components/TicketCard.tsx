@@ -11,15 +11,15 @@ import { TicketQR } from './TicketQR';
 // ── Helpers de presentación ──────────────────────────────────────
 
 const ESTADO_LABEL: Record<EstadoBoleto, string> = {
-  Activo:     'Activo',
+  Activo: 'Activo',
   Completado: 'Completado',
-  Cancelado:  'Cancelado',
+  Cancelado: 'Cancelado',
 };
 
 const ESTADO_COLORS: Record<EstadoBoleto, { bg: string; text: string }> = {
-  Activo:     { bg: 'white',                    text: '#6366f1' },
-  Completado: { bg: 'rgba(52,211,153,0.15)',     text: '#34d399' },
-  Cancelado:  { bg: 'rgba(239,68,68,0.15)',      text: '#ef4444' },
+  Activo: { bg: 'white', text: '#6366f1' },
+  Completado: { bg: 'rgba(52,211,153,0.15)', text: '#34d399' },
+  Cancelado: { bg: 'rgba(239,68,68,0.15)', text: '#ef4444' },
 };
 
 // ── Props ────────────────────────────────────────────────────────
@@ -40,12 +40,12 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
   const dateStr =
     date && !isNaN(date.getTime())
       ? date.toLocaleString('es-CO', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
       : 'Fecha no disponible';
 
   const priceStr =
@@ -57,9 +57,9 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
   const boardingStr =
     boardingDate && !isNaN(boardingDate.getTime())
       ? boardingDate.toLocaleTimeString('es-CO', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
+        hour: '2-digit',
+        minute: '2-digit',
+      })
       : '--:--';
 
   const estadoColors = ESTADO_COLORS[ticket.estado] ?? ESTADO_COLORS.Activo;
@@ -216,11 +216,16 @@ export const TicketCard = ({ ticket, onCancel }: Props) => {
           </div>
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-           <span style={{ fontSize: '0.7rem', color: '#475569' }}>Emisión: {dateStr}</span>
-           {ticket.tolerancia_minutos && (
-             <span style={{ fontSize: '0.7rem', color: '#facc15' }}>Tol: {ticket.tolerancia_minutos}m</span>
-           )}
+          <span style={{ fontSize: '0.7rem', color: '#475569' }}>Emisión: {dateStr}</span>
+          {ticket.tolerancia_minutos && (
+            <span style={{ fontSize: '0.7rem', color: '#facc15' }}>Tol: {ticket.tolerancia_minutos}m</span>
+          )}
         </div>
+        {/* <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.7rem', color: '#475569' }}>
+            Método de pago: {ticket.metodoPagoCiudadano?.metodoPago?.tipo ?? 'No disponible'}
+          </span>
+        </div> */}
       </div>
 
       {/* ── Área QR ────────────────────────────────────────────── */}

@@ -14,17 +14,38 @@ interface ProtectedRouteProps {
   };
 }
 
-export const ProtectedRoute = ({ children, permission }: ProtectedRouteProps) => {
-  const { isAuthenticated, activeRole, isLoading } = useAuthContext();
+export const ProtectedRoute = ({
+  children,
+  permission,
+}: ProtectedRouteProps) => {
+  const {
+    isAuthenticated,
+    activeRole,
+    isLoading,
+  } = useAuthContext();
+
   const { can } = useAuthorization();
 
   if (isLoading) return <Loader />;
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   if (!activeRole) return null;
 
-  if (permission && !can(permission.module, permission.action)) {
-    return <AccessDenied module={permission.module} />;
+  if (
+    permission &&
+    !can(
+      permission.module,
+      permission.action,
+    )
+  ) {
+    return (
+      <AccessDenied
+        module={permission.module}
+      />
+    );
   }
 
   // Protección adicional estricta: Si la ruta es de administración (y no es la respuesta pública de ePayco), solo entra el Admin
