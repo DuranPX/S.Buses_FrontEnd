@@ -59,7 +59,7 @@ const CreateStopPage = () => {
 
       navigate('/admin/paraderos');
     } catch (e) {
-      alert('Error al crear el paradero. Revisa los datos.');
+      alert('Error al crear el paradero. Quiza ya existe un paradero con el mismo código.');
     } finally {
       setIsSaving(false);
     }

@@ -874,6 +874,7 @@ const AbordajePage = () => {
 
 
             navigate('/abordaje', { replace: true }); // ← recarga la página limpia
+            window.location.reload();
 
         } catch (e: any) {
             const msg =
