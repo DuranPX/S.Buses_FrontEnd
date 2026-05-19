@@ -4,63 +4,100 @@ import { businessApi } from '../../../api/api';
 import { Loader } from '../../../shared/components/ui/Loader';
 import { MOCK_AGE_DATA } from '../../../mocks/analytics.mock';
 
-interface AgeSegment { name: string; value: number; porcentaje: number; color: string; }
+interface AgeSegment {
+  name: string;
+  value: number;
+  porcentaje: number;
+  color: string;
+  variacion: number;
+  valorMesAnterior: number;
+}
+
+interface Ruta { id: string; nombre: string; codigo: string; }
 
 const AgeAnalyticsPage = () => {
-  const [data, setData] = useState<AgeSegment[]>(MOCK_AGE_DATA.map((d) => ({ ...d, porcentaje: 0 })));
+  const [data, setData] = useState<AgeSegment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [, setActiveIndex] = useState<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [usandoMock, setUsandoMock] = useState(false);
+
+  // Filtros
+  const [rutas, setRutas] = useState<Ruta[]>([]);
+  const [rutaId, setRutaId] = useState('');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+
+  // Cargar rutas para el selector
+  useEffect(() => {
+    businessApi.get('/rutas').then(({ data }) => setRutas(data)).catch(() => { });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: response } = await businessApi.get('/ciudadano/analiticas/rango-etario');
+      const params = new URLSearchParams();
+      if (rutaId) params.append('rutaId', rutaId);
+      if (fechaInicio) params.append('fechaInicio', fechaInicio);
+      if (fechaFin) params.append('fechaFin', fechaFin);
+
+      const url = `/ciudadano/analiticas/rango-etario${params.toString() ? '?' + params.toString() : ''}`;
+      const { data: response } = await businessApi.get(url);
+
       if (response && response.length > 0 && response.some((d: AgeSegment) => d.value > 0)) {
         setData(response);
         setUsandoMock(false);
       } else {
-        setData(MOCK_AGE_DATA.map(d => ({ ...d, porcentaje: Math.round(d.value) })));
+        setData(MOCK_AGE_DATA.map(d => ({ ...d, porcentaje: Math.round(d.value), variacion: 0, valorMesAnterior: 0 })));
         setUsandoMock(true);
       }
     } catch {
-      setData(MOCK_AGE_DATA.map(d => ({ ...d, porcentaje: Math.round(d.value) })));
+      setData(MOCK_AGE_DATA.map(d => ({ ...d, porcentaje: Math.round(d.value), variacion: 0, valorMesAnterior: 0 })));
       setUsandoMock(true);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [rutaId, fechaInicio, fechaFin]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const total = data.reduce((s, d) => s + d.value, 0);
-  const segmentoPredominante = data.reduce((max, d) => d.value > max.value ? d : max, data[0]);
+  const segmentoPredominante = data.length > 0
+    ? data.reduce((max, d) => d.value > max.value ? d : max, data[0])
+    : null;
 
   const handleExportCSV = () => {
-    const csv = ['Rango,Pasajeros,Porcentaje',
-      ...data.map(d => `${d.name},${d.value},${d.porcentaje}%`)
+    const csv = ['Rango,Pasajeros,Porcentaje,Variación vs mes anterior',
+      ...data.map(d => `${d.name},${d.value},${d.porcentaje}%,${d.variacion > 0 ? '+' : ''}${d.variacion}pp`)
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'distribucion_etaria.csv'; a.click();
+    a.href = URL.createObjectURL(blob);
+    a.download = 'distribucion_etaria.csv';
+    a.click();
   };
 
   const handleExportPNG = () => {
     const svg = document.querySelector('.recharts-wrapper svg') as SVGElement;
     if (!svg) return;
-    const serializer = new XMLSerializer();
-    const svgStr = serializer.serializeToString(svg);
+    const svgStr = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement('canvas');
     canvas.width = 600; canvas.height = 400;
     const ctx = canvas.getContext('2d')!;
     ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, 600, 400);
     const img = new Image();
-    img.onload = () => { ctx.drawImage(img, 0, 0); canvas.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b!); a.download = 'distribucion_etaria.png'; a.click(); }); };
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgStr);
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(b => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b!);
+        a.download = 'distribucion_etaria.png';
+        a.click();
+      });
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
   };
 
-  const renderActiveShape = (props: any) => {
+  const renderActiveShape = (props: Record<string, any>) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props;
     return (
       <g>
@@ -70,6 +107,16 @@ const AgeAnalyticsPage = () => {
         <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 10} startAngle={startAngle} endAngle={endAngle} fill={fill} />
       </g>
     );
+  };
+
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '0.5rem',
+    color: '#f8fafc',
+    padding: '0.5rem 0.75rem',
+    fontSize: '0.875rem',
+    outline: 'none',
   };
 
   return (
@@ -96,6 +143,36 @@ const AgeAnalyticsPage = () => {
         </div>
       </div>
 
+      {/* Filtros */}
+      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1rem', padding: '1.25rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '200px', flex: 1 }}>
+          <label style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ruta</label>
+          <select value={rutaId} onChange={e => setRutaId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer', colorScheme: 'dark', backgroundColor: '#1e293b', color: '#f8fafc' }}>
+            <option value="">Todas las rutas</option>
+            {rutas.map(r => (
+              <option key={r.id} value={r.id}>{r.codigo} — {r.nombre}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <label style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha inicio</label>
+          <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <label style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha fin</label>
+          <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={inputStyle} />
+        </div>
+
+        <button
+          onClick={() => { setRutaId(''); setFechaInicio(''); setFechaFin(''); }}
+          style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+        >
+          Limpiar filtros
+        </button>
+      </div>
+
       {/* Segmento predominante */}
       {segmentoPredominante && (
         <div style={{ background: `${segmentoPredominante.color}15`, border: `1px solid ${segmentoPredominante.color}40`, borderRadius: '1rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -110,9 +187,9 @@ const AgeAnalyticsPage = () => {
       )}
 
       {/* Gráfico */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.08)', padding: '2rem', height: '380px' }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.08)', padding: '2rem', height: '450px' }}>
         {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><Loader /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}><Loader /></div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -128,22 +205,25 @@ const AgeAnalyticsPage = () => {
                 activeShape={renderActiveShape}
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    stroke="transparent"
+                    opacity={
+                      activeIndex === null
+                        ? 1
+                        : activeIndex === index
+                          ? 1
+                          : 0.45
+                    }
+                  />
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  background: '#0f172a',
-                  border: '1px solid #334155',
-                  borderRadius: '8px',
-                }}
+                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
                 formatter={(value, name) => {
-                  const numericValue = Array.isArray(value) ? value[0] : value ?? 0;
-
-                  return [
-                    `${Number(numericValue).toLocaleString()} pasajeros`,
-                    String(name ?? ''),
-                  ];
+                  const v = Array.isArray(value) ? value[0] : value ?? 0;
+                  return [`${Number(v).toLocaleString()} pasajeros`, String(name ?? '')];
                 }}
               />
               <Legend verticalAlign="bottom" height={40} formatter={(value) => <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>{value}</span>} />
@@ -160,25 +240,38 @@ const AgeAnalyticsPage = () => {
               <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>RANGO ETARIO</th>
               <th style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>PASAJEROS</th>
               <th style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>PORCENTAJE</th>
+              <th style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>VAR. VS MES ANTERIOR</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((row, i) => (
-              <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: row.color, flexShrink: 0 }} />
-                  <span style={{ color: '#f8fafc', fontWeight: 500 }}>{row.name}</span>
-                </td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#cbd5e1' }}>{row.value.toLocaleString()}</td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                  <span style={{ color: row.color, fontWeight: 600 }}>{row.porcentaje}%</span>
-                </td>
-              </tr>
-            ))}
+            {data.map((row, i) => {
+              const varColor = row.variacion > 0 ? '#34d399' : row.variacion < 0 ? '#f87171' : '#64748b';
+              const varPrefix = row.variacion > 0 ? '+' : '';
+              return (
+                <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: row.color, flexShrink: 0 }} />
+                    <span style={{ color: '#f8fafc', fontWeight: 500 }}>{row.name}</span>
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#cbd5e1' }}>{row.value.toLocaleString()}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                    <span style={{ color: row.color, fontWeight: 600 }}>{row.porcentaje}%</span>
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                    <span style={{ color: varColor, fontWeight: 600 }}>
+                      {row.variacion === 0 && row.valorMesAnterior === 0
+                        ? <span style={{ color: '#475569', fontSize: '0.8rem' }}>Sin datos</span>
+                        : `${varPrefix}${row.variacion}pp`}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
             <tr style={{ borderTop: '2px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
               <td style={{ padding: '0.75rem 1rem', color: '#f8fafc', fontWeight: 700 }}>Total</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>{total.toLocaleString()}</td>
               <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#f8fafc', fontWeight: 700 }}>100%</td>
+              <td />
             </tr>
           </tbody>
         </table>
