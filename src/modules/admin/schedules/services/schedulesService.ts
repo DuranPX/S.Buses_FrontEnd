@@ -8,11 +8,13 @@ export const TipoRecurrencia = {
 
 export type TipoRecurrencia = (typeof TipoRecurrencia)[keyof typeof TipoRecurrencia];
 
-export enum EstadoProgramacion {
-  PROGRAMADO = 'Programado',
-  EN_CURSO = 'En_Curso',
-  FINALIZADO = 'Finalizado',
-}
+export const EstadoProgramacion = {
+    PROGRAMADO: 'Programado',
+    EN_CURSO:   'En_Curso',
+    FINALIZADO: 'Finalizado',
+} as const;
+
+export type EstadoProgramacion = typeof EstadoProgramacion[keyof typeof EstadoProgramacion];
 
 export interface Programacion {
   id: string;
