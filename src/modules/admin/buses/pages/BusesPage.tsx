@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { busesService, type Bus } from '../services/busesService';
 import { Loader } from '../../../../shared/components/ui/Loader';
 import axios from 'axios';
+import QRCode from 'react-qr-code';
 
 const BusesPage = () => {
   const navigate = useNavigate();
@@ -98,9 +99,9 @@ const BusesPage = () => {
   };
 
   const filteredBuses = buses.filter(bus => {
-    const matchesSearch = bus.placa.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          bus.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          bus.empresa?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = bus.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bus.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bus.empresa?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesEstado = selectedEstado === 'TODOS' || bus.estado === selectedEstado;
     return matchesSearch && matchesEstado;
   });
@@ -116,7 +117,7 @@ const BusesPage = () => {
             Listado completo de la flota de buses, estado mecánico, capacidad y códigos QR.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => navigate('/admin/buses/crear')}
           style={{ background: '#6366f1', color: 'white', padding: '0.7rem 1.4rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}
         >
@@ -126,16 +127,16 @@ const BusesPage = () => {
 
       {/* Barra de Filtros */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <input 
-          type="text" 
-          placeholder="Buscar por placa, modelo o empresa..." 
+        <input
+          type="text"
+          placeholder="Buscar por placa, modelo o empresa..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           style={{ flex: '1 1 300px', padding: '0.8rem 1.2rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.95rem' }}
         />
 
-        <select 
-          value={selectedEstado} 
+        <select
+          value={selectedEstado}
           onChange={e => setSelectedEstado(e.target.value)}
           style={{ padding: '0.8rem 1.2rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.95rem', cursor: 'pointer' }}
         >
@@ -146,8 +147,8 @@ const BusesPage = () => {
         </select>
 
         {(searchTerm || selectedEstado !== 'TODOS') && (
-          <button 
-            onClick={() => { setSearchTerm(''); setSelectedEstado('TODOS'); }} 
+          <button
+            onClick={() => { setSearchTerm(''); setSelectedEstado('TODOS'); }}
             style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}
           >
             Limpiar Filtros
@@ -216,27 +217,27 @@ const BusesPage = () => {
                     </div>
                   </td>
                   <td style={{ padding: '1.2rem 1rem' }}>
-                    <span style={{ 
-                      padding: '4px 10px', 
-                      borderRadius: '12px', 
-                      fontSize: '0.75rem', 
-                      fontWeight: 700, 
-                      background: bus.estado === 'Operativo' ? 'rgba(16,185,129,0.1)' : bus.estado === 'Mantenimiento' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)', 
-                      color: bus.estado === 'Operativo' ? '#34d399' : bus.estado === 'Mantenimiento' ? '#fbbf24' : '#f87171' 
+                    <span style={{
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      background: bus.estado === 'Operativo' ? 'rgba(16,185,129,0.1)' : bus.estado === 'Mantenimiento' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                      color: bus.estado === 'Operativo' ? '#34d399' : bus.estado === 'Mantenimiento' ? '#fbbf24' : '#f87171'
                     }}>
                       {bus.estado === 'Operativo' ? 'Operativo' : bus.estado === 'Mantenimiento' ? 'Mantenimiento' : 'Fuera de Servicio'}
                     </span>
                   </td>
                   <td style={{ padding: '1.2rem 1rem', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button 
+                      <button
                         onClick={() => setSelectedQrBus(bus)}
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', padding: '0.5rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                         title="Ver QR"
                       >
                         <span>QR 🔍</span>
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleOpenEdit(bus)}
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', padding: '0.5rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                         title="Editar Bus"
@@ -267,15 +268,47 @@ const BusesPage = () => {
               <button onClick={() => setSelectedQrBus(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
             </div>
 
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', display: 'inline-block', marginBottom: '1.5rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }}>
+            <div
+              style={{
+                background: 'white',
+                padding: '1.5rem',
+                borderRadius: '1rem',
+                display: 'inline-block',
+                marginBottom: '1.5rem'
+              }}
+            >
               {selectedQrBus.qr_code ? (
-                <img src={selectedQrBus.qr_code} alt={`QR Bus ${selectedQrBus.placa}`} style={{ width: '200px', height: '200px', objectFit: 'contain' }} />
+                <QRCode
+                  value={selectedQrBus.qr_code}
+                  size={200}
+                />
               ) : (
-                <div style={{ width: '200px', height: '200px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', color: '#0f172a', fontWeight: 700, fontSize: '1.4rem', border: '2px solid #cbd5e1' }}>
-                  {selectedQrBus.placa}
+                <div
+                  style={{
+                    width: '200px',
+                    height: '200px',
+                    background: '#f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  Sin QR
                 </div>
               )}
-              <span style={{ display: 'block', marginTop: '1rem', fontWeight: 700, color: '#0f172a', fontSize: '1.4rem', letterSpacing: '2px' }}>{selectedQrBus.placa}</span>
+
+              <span
+                style={{
+                  display: 'block',
+                  marginTop: '1rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  fontSize: '1.4rem',
+                  letterSpacing: '2px'
+                }}
+              >
+                {selectedQrBus.placa}
+              </span>
             </div>
 
             <p style={{ color: '#cbd5e1', fontSize: '0.95rem', marginBottom: '0.25rem' }}>Modelo: <strong>{selectedQrBus.modelo}</strong> ({selectedQrBus.anio})</p>
@@ -283,7 +316,7 @@ const BusesPage = () => {
               <p style={{ color: '#818cf8', fontSize: '0.9rem', margin: 0 }}>Empresa: {selectedQrBus.empresa.nombre}</p>
             )}
 
-            <button 
+            <button
               onClick={() => setSelectedQrBus(null)}
               style={{ width: '100%', marginTop: '2rem', background: '#6366f1', color: 'white', padding: '0.8rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 600 }}
             >
@@ -308,8 +341,8 @@ const BusesPage = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Estado Operativo</label>
-                  <select 
-                    value={editEstado} 
+                  <select
+                    value={editEstado}
                     onChange={e => setEditEstado(e.target.value)}
                     style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem', cursor: 'pointer' }}
                   >
@@ -321,10 +354,10 @@ const BusesPage = () => {
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Modelo</label>
-                  <input 
-                    type="text" 
-                    value={editModelo} 
-                    onChange={e => setEditModelo(e.target.value)} 
+                  <input
+                    type="text"
+                    value={editModelo}
+                    onChange={e => setEditModelo(e.target.value)}
                     required
                     style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem' }}
                   />
@@ -334,10 +367,10 @@ const BusesPage = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Año de Fabricación</label>
-                  <input 
-                    type="number" 
-                    value={editAnio} 
-                    onChange={e => setEditAnio(parseInt(e.target.value) || 2026)} 
+                  <input
+                    type="number"
+                    value={editAnio}
+                    onChange={e => setEditAnio(parseInt(e.target.value) || 2026)}
                     min={1950}
                     max={2030}
                     required
@@ -347,10 +380,10 @@ const BusesPage = () => {
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Capacidad Total</label>
-                  <input 
-                    type="number" 
-                    value={editCapacidadTotal} 
-                    onChange={e => handleCapacidadEditChange(parseInt(e.target.value) || 0)} 
+                  <input
+                    type="number"
+                    value={editCapacidadTotal}
+                    onChange={e => handleCapacidadEditChange(parseInt(e.target.value) || 0)}
                     min={1}
                     required
                     style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#34d399', fontSize: '1rem', fontWeight: 700 }}
@@ -361,10 +394,10 @@ const BusesPage = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.5rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Pasajeros Sentados</label>
-                  <input 
-                    type="number" 
-                    value={editCapacidadSentados} 
-                    onChange={e => setEditCapacidadSentados(parseInt(e.target.value) || 0)} 
+                  <input
+                    type="number"
+                    value={editCapacidadSentados}
+                    onChange={e => setEditCapacidadSentados(parseInt(e.target.value) || 0)}
                     min={0}
                     style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem' }}
                   />
@@ -372,10 +405,10 @@ const BusesPage = () => {
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Pasajeros Parados</label>
-                  <input 
-                    type="number" 
-                    value={editCapacidadParados} 
-                    onChange={e => setEditCapacidadParados(parseInt(e.target.value) || 0)} 
+                  <input
+                    type="number"
+                    value={editCapacidadParados}
+                    onChange={e => setEditCapacidadParados(parseInt(e.target.value) || 0)}
                     min={0}
                     style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem' }}
                   />
@@ -384,25 +417,25 @@ const BusesPage = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>URL de Fotografía</label>
-                <input 
-                  type="url" 
-                  value={editFotoUrl} 
-                  onChange={e => setEditFotoUrl(e.target.value)} 
+                <input
+                  type="url"
+                  value={editFotoUrl}
+                  onChange={e => setEditFotoUrl(e.target.value)}
                   placeholder="https://midominio.com/foto.jpg"
                   style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.95rem' }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleCloseEdit}
                   style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '0.8rem 1.4rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSaving}
                   style={{ background: '#6366f1', color: 'white', padding: '0.8rem 1.4rem', borderRadius: '0.5rem', border: 'none', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: isSaving ? 0.7 : 1 }}
                 >
