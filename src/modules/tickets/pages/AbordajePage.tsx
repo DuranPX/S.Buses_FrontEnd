@@ -871,10 +871,8 @@ const AbordajePage = () => {
 
             refreshWallet().catch(() => { });
             setStep('exito');
-
-
-            navigate('/abordaje', { replace: true }); // ← recarga la página limpia
-            window.location.reload();
+          
+            navigate('/boletos');
 
         } catch (e: any) {
             const msg =
