@@ -27,3 +27,5 @@ venv
 .env
 SECURITY.md
 .env.example
+
+.env.local

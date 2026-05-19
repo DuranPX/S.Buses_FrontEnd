@@ -33,11 +33,22 @@ export interface BoletoProgramacion {
   estado: string; // 'En_Curso', etc.
 }
 
+export interface BoletoMetodoPagoDetalle {
+  id: string;
+  tipo: string;
+  descripcion: string;
+}
+
+export interface MetodoPagoDetalle {
+  id: string;
+  tipo: string;
+  descripcion: string;
+}
+
 export interface BoletoMetodoPago {
   id: string;
-  tipo?: string;          // PREPAGO | EFECTIVO | etc.
-  nombre?: string;
-  saldo?: number;
+  saldo: string | number;
+  metodoPago: MetodoPagoDetalle;
 }
 
 export interface BoletoParadero {
@@ -76,7 +87,7 @@ export interface Ticket {
 
   // Economía
   monto_pagado: number;
-  montoCobrado?: number; 
+  montoCobrado?: number;
 
   // Fechas y Tiempos
   fecha_emision: string;
@@ -90,7 +101,15 @@ export interface Ticket {
   ciudadano_id?: string;
   programacion_id?: string;
   metodo_pago_id?: string;
-
+  metodoPagoCiudadano?: {
+    id: string;
+    saldo: string | number;
+    metodoPago: {
+      id: string;
+      tipo: string;
+      descripcion: string;
+    };
+  };
   // Datos expandidos para la UI
   ruta_codigo?: string;
   ruta_nombre?: string;
@@ -102,6 +121,8 @@ export interface Ticket {
   programacion_estado?: string;
   tolerancia_minutos?: number;
 }
+
+
 
 // ── DTO que espera POST /boletos/comprar ──────────────────────────
 export interface CreateBoletoDto {

@@ -13,7 +13,7 @@
 import { io, Socket } from 'socket.io-client';
 
 const MOCK_MODE = import.meta.env.VITE_MOCK_WS !== 'false';
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+const WS_URL = import.meta.env.VITE_WS_URL;
 
 // ---- Mini EventEmitter para mock mode ----
 type Listener = (...args: any[]) => void;
@@ -56,12 +56,17 @@ if (MOCK_MODE) {
   _socket = new MockSocket();
   console.info('[WS] 🟡 Mock mode activo — sin conexión real al servidor');
 } else {
+  const token = localStorage.getItem('token');
+
   _socket = io(WS_URL, {
     autoConnect: true,
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 2000,
     transports: ['websocket'],
+    auth: {
+      token: `Bearer ${token}`,
+    },
   });
 
   _socket.on('connect', () => {

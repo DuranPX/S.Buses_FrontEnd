@@ -16,6 +16,11 @@ export const useAuthorization = () => {
     // Admin tiene permisos completos en todo el sistema
     if (activeRole.name === 'Admin' || activeRole.name === 'ADMIN') return true;
 
+    // Ciudadano: acceso completo a módulos de usuario final
+    const citizenFullAccessModules: ModuleName[] = ['boletos', 'viajes', 'cartera'];
+    if ((activeRole.name === 'Ciudadano' || activeRole.name === 'CIUDADANO' || activeRole.name?.toLowerCase() === 'ciudadano')
+        && citizenFullAccessModules.includes(module)) return true;
+
     // Cartera (Mi Billetera): la puede ver todo tipo de usuario ciudadano, conductor o admin
     if (module === 'cartera' && action === 'leer') return true;
     if (module === 'cartera' && action !== 'leer') return false; // Solo admin (ya cubierto arriba)

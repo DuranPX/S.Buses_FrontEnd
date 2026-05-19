@@ -62,7 +62,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       label: 'Mi Turno',
       items: [
         { module: MODULES.TURNO_CONDUCTOR, path: '/conductor/turno', label: 'Turno Actual' },
-        { module: MODULES.INCIDENTES, path: '/incidentes/crear', label: 'Reportar Incidente' },
+        { module: MODULES.INCIDENTES, path: '/incidentes/crear', label: 'Maneja tu turno' },
       ]
     },
 
