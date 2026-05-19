@@ -1,3 +1,5 @@
+// src/modules/drivers/hooks/useDriverShift.ts
+// Reemplaza el archivo completo:
 import { useState, useEffect, useCallback } from 'react';
 import { businessApi } from '../../../api/api';
 import { useSocket } from '../../../websocket/hooks/useSocket';
@@ -18,37 +20,53 @@ const adaptTurno = (turno: any): DriverShift => ({
     ? `${turno.conductor.persona.firstName} ${turno.conductor.persona.lastName}`
     : undefined,
   bus_placa: turno.bus?.placa,
+  puedeIniciar: turno.puedeIniciar ?? false,
 });
 
 export const useDriverShift = () => {
+  const [shifts, setShifts] = useState<DriverShift[]>([]);
   const [shift, setShift] = useState<DriverShift | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const fetchShift = useCallback(async () => {
+  // canStartShift usa el campo puedeIniciar que viene del backend,
+  // con fallback a la lógica local por compatibilidad
+  const canStartShift = (turno: DriverShift): boolean => {
+    if ('puedeIniciar' in turno) return !!(turno as any).puedeIniciar;
+    const ahora = new Date();
+    const horaInicio = new Date(turno.fecha_inicio_programada);
+    horaInicio.setMinutes(horaInicio.getMinutes() - 10);
+    return ahora >= horaInicio && turno.estado === 'PROGRAMADO';
+  };
+
+  const fetchAllShifts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // El backend obtiene el conductor desde el JWT — no enviamos conductor_id
-      const { data } = await businessApi.get('/turno/conductor/activo');
-      setShift(adaptTurno(data));
+      const { data } = await businessApi.get('/turno/conductor/mis-turnos');
+      const adapted = data.map(adaptTurno);
+      setShifts(adapted);
+
+      const turnoEnCurso = adapted.find((t: DriverShift) => t.estado === 'EN_CURSO') || null;
+      setShift(turnoEnCurso);
     } catch {
+      setShifts([]);
+      setShift(null);
       setError('No hay turnos programados para hoy.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchShift(); }, [fetchShift]);
+  const fetchShift = fetchAllShifts;
 
-  // Escuchar evento WebSocket cuando el turno se inicia
-  useSocket(WS_EVENTS.SHIFT_STARTED, (_data: any) => {
-      fetchShift();
-  });
+  useEffect(() => { fetchAllShifts(); }, [fetchAllShifts]);
 
-  const startShift = async (condition: BusCondition) => {
-    if (!shift) return false;
+  useSocket(WS_EVENTS.SHIFT_STARTED, () => { fetchAllShifts(); });
+  useSocket(WS_EVENTS.SHIFT_ENDED, () => { fetchAllShifts(); });
+
+  const startShift = async (turnoId: string, condition: BusCondition) => {
     setIsProcessing(true);
     setError(null);
     try {
@@ -62,16 +80,15 @@ export const useDriverShift = () => {
       ].filter(Boolean).join(' | ');
 
       const { data } = await businessApi.patch(
-        `/turno/${shift.id}/iniciar`,
+        `/turno/${turnoId}/iniciar`,
         { observaciones }
       );
-      setShift(adaptTurno(data));
+      const adapted = adaptTurno(data);
+      setShift(adapted);
+      setShifts(prev => prev.map(s => s.id === turnoId ? adapted : s));
       return true;
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-        'Error al iniciar turno. Verifica el estado del bus.'
-      );
+      setError(err?.response?.data?.message || 'Error al iniciar turno.');
       return false;
     } finally {
       setIsProcessing(false);
@@ -84,6 +101,7 @@ export const useDriverShift = () => {
     try {
       await businessApi.patch(`/turno/${shift.id}/finalizar`);
       setShift(null);
+      await fetchAllShifts();
       return true;
     } catch {
       setError('Error al finalizar turno.');
@@ -93,5 +111,15 @@ export const useDriverShift = () => {
     }
   };
 
-  return { shift, isLoading, error, isProcessing, startShift, endShift, refetch: fetchShift };
+  return {
+    shifts,
+    shift,
+    isLoading,
+    error,
+    isProcessing,
+    startShift,
+    endShift,
+    fetchShift,
+    canStartShift,
+  };
 };

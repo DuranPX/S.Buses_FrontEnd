@@ -15,6 +15,7 @@ export interface DriverShift {
   // expandidos
   conductor_nombre?: string;
   bus_placa?: string;
+  puedeIniciar?: boolean;
 }
 
 export interface BusCondition {

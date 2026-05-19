@@ -9,6 +9,7 @@ export interface Stop {
   tipo: string;
   latitud: number;
   longitud: number;
+  estado: boolean;
 
   rutaParaderos?: {
     ruta: {

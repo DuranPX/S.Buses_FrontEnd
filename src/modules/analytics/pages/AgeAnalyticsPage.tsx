@@ -9,13 +9,13 @@ interface AgeSegment { name: string; value: number; porcentaje: number; color: s
 const AgeAnalyticsPage = () => {
   const [data, setData] = useState<AgeSegment[]>(MOCK_AGE_DATA.map((d) => ({ ...d, porcentaje: 0 })));
   const [isLoading, setIsLoading] = useState(true);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [, setActiveIndex] = useState<number | null>(null);
   const [usandoMock, setUsandoMock] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: response } = await businessApi.get('/ciudadano/analytics/edad');
+      const { data: response } = await businessApi.get('/ciudadano/analiticas/rango-etario');
       if (response && response.length > 0 && response.some((d: AgeSegment) => d.value > 0)) {
         setData(response);
         setUsandoMock(false);
@@ -125,21 +125,26 @@ const AgeAnalyticsPage = () => {
                 dataKey="value"
                 onMouseEnter={(_, index) => setActiveIndex(index)}
                 onMouseLeave={() => setActiveIndex(null)}
-                {...({
-                  activeIndex: activeIndex ?? undefined,
-                  activeShape: renderActiveShape,
-                } as any)}
+                activeShape={renderActiveShape}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-                formatter={(value, name) => [
-                  `${Number(Array.isArray(value) ? value[0] : value ?? 0).toLocaleString()} pasajeros`,
-                  String(name ?? ''),
-                ]}
+                contentStyle={{
+                  background: '#0f172a',
+                  border: '1px solid #334155',
+                  borderRadius: '8px',
+                }}
+                formatter={(value, name) => {
+                  const numericValue = Array.isArray(value) ? value[0] : value ?? 0;
+
+                  return [
+                    `${Number(numericValue).toLocaleString()} pasajeros`,
+                    String(name ?? ''),
+                  ];
+                }}
               />
               <Legend verticalAlign="bottom" height={40} formatter={(value) => <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>{value}</span>} />
             </PieChart>

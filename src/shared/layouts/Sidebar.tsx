@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useAuthorization } from "../../features/roles/hooks/useAuthorization";
 import { MODULES } from "../config/modules";
+import { useDriverShiftStatus } from "../../modules/drivers/hooks/useDriverShiftStatus";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -9,6 +10,11 @@ interface SidebarProps {
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { canRead, activeRole } = useAuthorization();
+  const { turnoEnCurso } = useDriverShiftStatus();
+
+  console.log('ROL ACTIVO:', activeRole);
+  console.log('TURNO EN CURSO:', turnoEnCurso);
+  console.log('PUEDE LEER TURNO:', canRead(MODULES.TURNO_CONDUCTOR));
 
   /**
    * Bloqueos temporales de módulos incompletos
@@ -61,8 +67,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     {
       label: 'Mi Turno',
       items: [
-        { module: MODULES.TURNO_CONDUCTOR, path: '/conductor/turno', label: 'Turno Actual' },
-        { module: MODULES.INCIDENTES, path: '/incidentes/crear', label: 'Reportar Incidente' },
+        {
+          module: MODULES.TURNO_CONDUCTOR,
+          path: '/conductor/turno',
+          label: 'Turno Actual'
+        },
+
+        ...(turnoEnCurso
+          ? [{
+            module: MODULES.INCIDENTES,
+            path: '/incidentes/crear',
+            label: 'Reportar Incidente'
+          }]
+          : []),
       ]
     },
 
