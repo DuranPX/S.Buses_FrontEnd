@@ -20,7 +20,7 @@ export const ProtectedRoute = ({ children, permission }: ProtectedRouteProps) =>
 
   if (isLoading) return <Loader />;
   if (!isAuthenticated) return <Navigate to="/" replace />;
-  
+
   if (!activeRole) return null;
 
   if (permission && !can(permission.module, permission.action)) {
@@ -28,7 +28,14 @@ export const ProtectedRoute = ({ children, permission }: ProtectedRouteProps) =>
   }
 
   // Protección adicional estricta: Si la ruta es de administración (y no es la respuesta pública de ePayco), solo entra el Admin
-  if (window.location.pathname.startsWith('/admin') && (!permission || permission.module !== 'cartera')) {
+  const isAdminRoute = window.location.pathname.startsWith('/admin');
+  const isIncidentesRoute = window.location.pathname.startsWith('/admin/incidentes');
+
+  if (
+    isAdminRoute &&
+    !isIncidentesRoute &&
+    (!permission || permission.module !== 'cartera')
+  ) {
     if (activeRole.name !== 'Admin' && activeRole.name !== 'ADMIN') {
       return <AccessDenied module={permission?.module || ('admin' as any)} />;
     }
