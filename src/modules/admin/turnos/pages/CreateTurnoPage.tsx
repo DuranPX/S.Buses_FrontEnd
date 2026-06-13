@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { businessApi } from '../../../../api/api';
+import { authorizedBusinessApi } from '../../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../../shared/config/modules';
 import { turnosService } from '../services/turnosService';
 import { Loader } from '../../../../shared/components/ui/Loader';
 import axios from 'axios';
@@ -37,8 +38,8 @@ const CreateTurnoPage = () => {
       setIsLoadingData(true);
       try {
         const [conductoresRes, busesRes] = await Promise.all([
-          businessApi.get('/conductor'),
-          businessApi.get('/bus'),
+          authorizedBusinessApi.get(MODULES.CONDUCTORES, '/conductor'),
+          authorizedBusinessApi.get(MODULES.BUSES, '/bus'),
         ]);
 
         setConductores(

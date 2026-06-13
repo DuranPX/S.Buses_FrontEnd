@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from 'recharts';
-import { businessApi } from '../../../api/api';
+import { authorizedBusinessApi } from '../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../shared/config/modules';
 import { Loader } from '../../../shared/components/ui/Loader';
 import { MOCK_AGE_DATA } from '../../../mocks/analytics.mock';
 
@@ -29,7 +30,7 @@ const AgeAnalyticsPage = () => {
 
   // Cargar rutas para el selector
   useEffect(() => {
-    businessApi.get('/rutas').then(({ data }) => setRutas(data)).catch(() => { });
+    authorizedBusinessApi.get(MODULES.ANALITICAS, '/rutas').then(({ data }) => setRutas(data)).catch(() => { });
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -41,7 +42,7 @@ const AgeAnalyticsPage = () => {
       if (fechaFin) params.append('fechaFin', fechaFin);
 
       const url = `/ciudadano/analiticas/rango-etario${params.toString() ? '?' + params.toString() : ''}`;
-      const { data: response } = await businessApi.get(url);
+      const { data: response } = await authorizedBusinessApi.get(MODULES.ANALITICAS, url);
 
       if (response && response.length > 0 && response.some((d: AgeSegment) => d.value > 0)) {
         setData(response);

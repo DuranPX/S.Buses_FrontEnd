@@ -1,4 +1,5 @@
-import { businessApi } from '../../../../api/api';
+import { authorizedBusinessApi } from '../../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../../shared/config/modules';
 
 export const TipoRecurrencia = {
   DIARIA:'Diaria',
@@ -40,26 +41,26 @@ export interface CreateProgramacionDto {
 
 export const schedulesService = {
   getAll: async (): Promise<Programacion[]> => {
-    const response = await businessApi.get<Programacion[]>('/programaciones');
+    const response = await authorizedBusinessApi.get<Programacion[]>(MODULES.PROGRAMACIONES, '/programaciones');
     return response.data;
   },
 
   getById: async (id: string): Promise<Programacion> => {
-    const response = await businessApi.get<Programacion>(`/programaciones/${id}`);
+    const response = await authorizedBusinessApi.get<Programacion>(MODULES.PROGRAMACIONES, `/programaciones/${id}`);
     return response.data;
   },
 
   create: async (dto: CreateProgramacionDto): Promise<Programacion> => {
-    const response = await businessApi.post<Programacion>('/programaciones', dto);
+    const response = await authorizedBusinessApi.post<Programacion>(MODULES.PROGRAMACIONES, '/programaciones', dto);
     return response.data;
   },
 
   update: async (id: string, dto: Partial<CreateProgramacionDto>): Promise<Programacion> => {
-    const response = await businessApi.patch<Programacion>(`/programaciones/${id}`, dto);
+    const response = await authorizedBusinessApi.patch<Programacion>(MODULES.PROGRAMACIONES, `/programaciones/${id}`, dto);
     return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    await businessApi.delete(`/programaciones/${id}`);
+    await authorizedBusinessApi.delete(MODULES.PROGRAMACIONES, `/programaciones/${id}`);
   },
 };

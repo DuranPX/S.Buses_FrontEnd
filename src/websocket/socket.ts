@@ -70,11 +70,15 @@ if (MOCK_MODE) {
   });
 
   _socket.on('connect', () => {
-    console.info('[WS] 🟢 Conectado al servidor:', WS_URL);
+    console.info(`[WS] 🟢 Conectado al servidor: ${WS_URL}`);
   });
 
   _socket.on('disconnect', (reason) => {
-    console.warn('[WS] 🔴 Desconectado:', reason);
+    if (reason === 'io server disconnect') {
+      console.warn('[WS] 🔴 Desconectado: io server disconnect');
+    } else {
+      console.warn(`[WS] 🔴 Desconectado: ${reason}`);
+    }
   });
 
   _socket.on('connect_error', (err) => {

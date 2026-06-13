@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { businessApi } from '../../../api/api';
+import { authorizedBusinessApi } from '../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../shared/config/modules';
 import { Loader } from '../../../shared/components/ui/Loader';
 import { MOCK_INCOME_DATA } from '../../../mocks/analytics.mock';
 import type {
@@ -20,7 +21,7 @@ const IncomeAnalyticsPage = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: response } = await businessApi.get(`/boletos/analytics/ingresos?meses=${periodoMeses}`);
+      const { data: response } = await authorizedBusinessApi.get(MODULES.ANALITICAS, `/boletos/analytics/ingresos?meses=${periodoMeses}`);
       if (response && response.length > 0) {
         setData(response);
         setUsandoMock(false);

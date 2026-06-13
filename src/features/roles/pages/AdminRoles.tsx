@@ -7,13 +7,15 @@ import { AccessDenied } from "../../../shared/components/feedback/AccessDenied";
 import { MODULES } from "../../../shared/config/modules";
 import type { Role, Permission } from "../../auth/context/AuthContext";
 import { securityApi } from "../../../api/api";
+import { synchronizeRolePermissions, buildDefaultPermissions } from "../utils/permissionUtils";
 
 const mapFromBackend = (data: any): Role => ({
   id: data.id || data._id,
   name: data.nombre,
   description: data.descripcion,
   activo: data.activo,
-  permisos: data.permisos || []
+  // Sincronizar al cargar desde backend: garantiza que todos los módulos estén presentes
+  permisos: synchronizeRolePermissions(data.permisos || [])
 });
 
 const mapToBackend = (role: Role): any => ({
@@ -89,13 +91,22 @@ export const AdminRoles = () => {
     if (role && !can(MODULES.ROLES, 'editar')) return;
     if (!role && !can(MODULES.ROLES, 'escribir')) return;
 
-    setSelectedRole(role || {
-      id: `role-${Date.now()}`,
-      name: "",
-      description: "",
-      activo: true,
-      permisos: []
-    });
+    if (role) {
+      // Editar rol existente: sincronizar por si tiene módulos nuevos desde la última edición
+      setSelectedRole({
+        ...role,
+        permisos: synchronizeRolePermissions(role.permisos)
+      });
+    } else {
+      // Nuevo rol: inicializar con todos los módulos en false
+      setSelectedRole({
+        id: `role-${Date.now()}`,
+        name: "",
+        description: "",
+        activo: true,
+        permisos: buildDefaultPermissions()
+      });
+    }
     setIsEditing(true);
   };
 
@@ -103,7 +114,12 @@ export const AdminRoles = () => {
     if (!selectedRole) return;
     
     try {
-      const payload = mapToBackend(selectedRole);
+      // Sincronizar antes de enviar: garantiza que el payload contiene todos los módulos
+      const roleToSave: Role = {
+        ...selectedRole,
+        permisos: synchronizeRolePermissions(selectedRole.permisos)
+      };
+      const payload = mapToBackend(roleToSave);
       
       if (roles.find(r => r.id === selectedRole.id)) {
 
@@ -185,7 +201,7 @@ export const AdminRoles = () => {
                       </div>
                       {mod === 'usuarios' && (
                         <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#eab308', background: 'rgba(234,179,8,0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(234,179,8,0.2)' }}>
-                    preg        <strong>Nota:</strong> Si otorgas permisos de usuarios, debes conceder permisos de <strong>leer roles</strong> para una correcta gestión.
+                            <strong>Nota:</strong> Si otorgas permisos de usuarios, debes conceder permisos de <strong>leer roles</strong> para una correcta gestión.
                         </div>
                       )}
                     </div>

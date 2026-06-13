@@ -1,9 +1,10 @@
-import { businessApi } from '../../../api/api';
+import { authorizedBusinessApi } from '../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../shared/config/modules';
 import type { NearbyStop, Coordinates, Stop } from '../types/stop.types';
 
 export const stopsService = {
   getNearby: async (location: Coordinates, radiusMeters = 2000): Promise<NearbyStop[]> => {
-    const response = await businessApi.get('/paraderos/cercanos', {
+    const response = await authorizedBusinessApi.get(MODULES.PARADEROS, '/paraderos/cercanos', {
       params: {
         lat: location.lat,
         lng: location.lng,
@@ -22,7 +23,7 @@ export const stopsService = {
   },
 
   getAll: async (): Promise<Stop[]> => {
-    const response = await businessApi.get('/paraderos');
+    const response = await authorizedBusinessApi.get(MODULES.PARADEROS, '/paraderos');
     return response.data;
   },
 
@@ -35,7 +36,7 @@ export const stopsService = {
     estado?: boolean;
     nodo_id: string;
   }): Promise<Stop> => {
-    const response = await businessApi.post('/paraderos', dto);
+    const response = await authorizedBusinessApi.post(MODULES.PARADEROS, '/paraderos', dto);
     return response.data;
   }
 };
