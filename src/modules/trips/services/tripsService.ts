@@ -1,5 +1,7 @@
 // src/modules/trips/services/tripsService.ts
 import { businessApi } from '../../../api/api';
+import { authorizedBusinessApi } from '../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../shared/config/modules';
 import type { Trip } from '../types/trip.types';
 
 const adaptBoleto = (boleto: any): Trip => {
@@ -72,18 +74,18 @@ export const tripsService = {
 
   // Historial de viajes del ciudadano autenticado
   getHistory: async (): Promise<Trip[]> => {
-    const { data } = await businessApi.get('/boletos/mis-viajes');
+    const { data } = await authorizedBusinessApi.get(MODULES.VIAJES, '/boletos/mis-viajes');
     return data.map(adaptBoleto);
   },
 
   // GET /boletos/:id/detalle — detalle completo del viaje
   getTripDetail: async (id: string): Promise<Trip> => {
-    const { data } = await businessApi.get(`/boletos/${id}/detalle`);
+    const { data } = await authorizedBusinessApi.get(MODULES.VIAJES, `/boletos/${id}/detalle`);
     return adaptBoleto(data);
   },
 
   finishTrip: async (boletoId: string, destinoId: string): Promise<Trip> => {
-    const { data } = await businessApi.patch(`/boletos/${boletoId}/descenso`, {
+    const { data } = await authorizedBusinessApi.patch(MODULES.BOLETOS, `/boletos/${boletoId}/descenso`, {
       paraderoDescensoId: destinoId,
     });
     return adaptBoleto(data);

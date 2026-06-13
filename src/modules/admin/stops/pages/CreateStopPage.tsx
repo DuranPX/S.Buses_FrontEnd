@@ -111,7 +111,7 @@ const CreateStopPage = () => {
 
         <div style={{ borderRadius: '1rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
           <MapContainer center={[5.06889, -75.51738]} zoom={14} style={{ width: '100%', height: '100%', background: '#0f172a' }}>
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='&copy; CARTO' />
+            <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; CARTO' />
             <LeafletResizeHandler />
             <MapClicker onMapClick={setPosition} />
             {position && <Marker position={position} icon={stopIcon} />}

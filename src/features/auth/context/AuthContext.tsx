@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { logout as logoutService, selectRole, syncBusinessUser } from "../services/auth.service";
 import { useAuthFlow } from "./AuthFlowContext";
 import { businessApi } from "../../../api/api";
+import { synchronizeRolePermissions } from "../../roles/utils/permissionUtils";
+import { permissionStore } from "../../roles/utils/permissionStore";
 
 const DriverLicenseModal = ({ personaId, onSuccess, onClose }: { personaId: string; onSuccess: (conductorId: string) => void; onClose: () => void }) => {
   const [licencia, setLicencia] = useState('');
@@ -137,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleSetActiveRole = (role: Role) => {
     setActiveRole(role);
+    permissionStore.setActiveRole(role);
     localStorage.setItem("activeRole", role.id);
     setShowRoleModal(false);
   };
@@ -208,18 +211,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else if (tokenType === "auth_role" || explicitRole) {
       const backendRole = explicitRole;
 
+      const rawPermisos = backendRole?.permisos || [];
+
       const roleObj: Role = backendRole ? {
         id: backendRole.id || backendRole._id || `role-${backendRole.nombre?.toLowerCase() || 'default'}`,
         name: backendRole.nombre || backendRole.name || "ROLE",
         description: backendRole.descripcion || backendRole.description || "Perfil activo",
         activo: backendRole.activo ?? true,
-        permisos: backendRole.permisos || []
+        // Sincronizar aquí, una sola vez, para que useAuthorization reciba un rol completo
+        permisos: synchronizeRolePermissions(rawPermisos)
       } : {
         id: "role-default",
         name: "USUARIO",
         description: "Acceso Básico",
         activo: true,
-        permisos: []
+        permisos: synchronizeRolePermissions([])
       };
 
       setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals, ciudadanoId, conductorId, birthDate, personaId });
@@ -296,6 +302,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     clearAuthFlow();
     setUser(null);
     setActiveRole(null);
+    permissionStore.setActiveRole(null);
     localStorage.removeItem("activeRole");
     logoutService();
   };

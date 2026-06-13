@@ -3,7 +3,8 @@
 // Consume ms-business directamente usando businessApi (autenticado via JWT).
 // ================================================================
 
-import { businessApi } from '../../../api/api';
+import { authorizedBusinessApi } from '../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../shared/config/modules';
 import type { Route, RouteFilters } from '../types/route.types';
 
 export interface CreateRutaFullDto {
@@ -29,7 +30,7 @@ export const routesService = {
     if (filters?.search) params.nombre = filters.search; // El contrato pide 'nombre'
     if (filters?.soloActivas) params.estado = true;
 
-    const response = await businessApi.get<Route[]>('/rutas', { params });
+    const response = await authorizedBusinessApi.get<Route[]>(MODULES.RUTAS, '/rutas', { params });
     
     // Mapear paraderos para asegurar compatibilidad con la UI
     return response.data.map(route => ({
@@ -42,7 +43,7 @@ export const routesService = {
    * GET /rutas/:id — detalle básico de una ruta.
    */
   getById: async (id: string): Promise<Route | null> => {
-    const response = await businessApi.get<Route>(`/rutas/${id}`);
+    const response = await authorizedBusinessApi.get<Route>(MODULES.RUTAS, `/rutas/${id}`);
     return response.data;
   },
 
@@ -50,7 +51,7 @@ export const routesService = {
    * GET /rutas/:id/completa — detalle completo con paraderos y nodos.
    */
   getByIdComplete: async (id: string): Promise<Route | null> => {
-    const response = await businessApi.get<Route>(`/rutas/${id}/completa`);
+    const response = await authorizedBusinessApi.get<Route>(MODULES.RUTAS, `/rutas/${id}/completa`);
     // Aseguramos compatibilidad si el componente usa .paraderos
     if (response.data && response.data.rutaParaderos) {
       response.data.paraderos = response.data.rutaParaderos;
@@ -63,7 +64,7 @@ export const routesService = {
    * Según el contrato: POST /api/rutas/full
    */
   createFull: async (dto: CreateRutaFullDto): Promise<Route> => {
-    const response = await businessApi.post<Route>('/rutas/full', dto);
+    const response = await authorizedBusinessApi.post<Route>(MODULES.RUTAS, '/rutas/full', dto);
     return response.data;
   },
 
@@ -71,7 +72,7 @@ export const routesService = {
    * PATCH /rutas/:id — actualiza datos de una ruta.
    */
   update: async (id: string, dto: Partial<CreateRutaFullDto>): Promise<Route> => {
-    const response = await businessApi.patch<Route>(`/rutas/${id}`, dto);
+    const response = await authorizedBusinessApi.patch<Route>(MODULES.RUTAS, `/rutas/${id}`, dto);
     return response.data;
   },
 
@@ -79,6 +80,6 @@ export const routesService = {
    * DELETE /rutas/:id — elimina una ruta.
    */
   delete: async (id: string): Promise<void> => {
-    await businessApi.delete(`/rutas/${id}`);
+    await authorizedBusinessApi.delete(MODULES.RUTAS, `/rutas/${id}`);
   },
 };

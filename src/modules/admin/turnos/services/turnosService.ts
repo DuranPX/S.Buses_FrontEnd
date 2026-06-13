@@ -1,4 +1,5 @@
-import { businessApi } from '../../../../api/api';
+import { authorizedBusinessApi } from '../../../../features/roles/utils/authorizedBusinessApi';
+import { MODULES } from '../../../../shared/config/modules';
 
 export interface Turno {
   id: string;
@@ -21,12 +22,12 @@ export interface CreateTurnoDto {
 
 export const turnosService = {
   getAll: async (): Promise<Turno[]> => {
-    const { data } = await businessApi.get('/turno');
+    const { data } = await authorizedBusinessApi.get(MODULES.TURNOS, '/turno');
     return Array.isArray(data) ? data : [];
   },
 
   create: async (dto: CreateTurnoDto): Promise<Turno> => {
-    const { data } = await businessApi.post('/turno', dto);
+    const { data } = await authorizedBusinessApi.post(MODULES.TURNOS, '/turno', dto);
     return data;
   },
 };
