@@ -22,9 +22,17 @@ export const businessApi = axios.create({
   },
 });
 
+export const notificationsApi = axios.create({
+  baseURL: import.meta.env.VITE_MS_NOTIFICATIONS_API,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // interceptores
 setupInterceptors(api);
 setupInterceptors(securityApi);
 setupInterceptors(businessApi);
+setupInterceptors(notificationsApi);
 
 export default api;

@@ -109,6 +109,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.GRUPOS, path: '/grupos', label: 'Grupos' },
         { module: MODULES.RESENAS, path: '/resenas', label: 'Reseñas' },
       ]
+    },
+
+    {
+      label: 'Atención al Usuario',
+      items: [
+        { module: MODULES.PQRS, path: '/pqrs', label: 'PQRS' },
+        { module: MODULES.ASESORIAS, path: '/asesorias', label: 'Asesorías' },
+      ]
     }
   ];
 

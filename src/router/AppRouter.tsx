@@ -93,7 +93,10 @@ const IncomeAnalyticsPage   = lazy(() => import("../modules/analytics/pages/Inco
 const AgeAnalyticsPage      = lazy(() => import("../modules/analytics/pages/AgeAnalyticsPage"))
 const IncidentAnalyticsPage = lazy(() => import("../modules/analytics/pages/IncidentAnalyticsPage"))
 
-// ================================================================
+// --- Atención al Usuario ---
+const PQRSPage       = lazy(() => import("../modules/pqrs/pages/PQRSPage"))
+const AsesoriasPage  = lazy(() => import("../modules/asesorias/pages/AsesoriasPage"))
+
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><Loader /></div>}>
@@ -397,6 +400,18 @@ export default function AppRouter() {
           <Route path="/analiticas/incidentes" element={
             <ProtectedRoute permission={{ module: MODULES.ANALITICAS, action: 'leer' }}>
               <SuspenseWrapper><IncidentAnalyticsPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/pqrs" element={
+            <ProtectedRoute permission={{ module: MODULES.PQRS, action: 'leer' }}>
+              <SuspenseWrapper><PQRSPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/asesorias" element={
+            <ProtectedRoute permission={{ module: MODULES.ASESORIAS, action: 'leer' }}>
+              <SuspenseWrapper><AsesoriasPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
 
