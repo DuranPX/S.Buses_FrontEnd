@@ -1,8 +1,10 @@
+// pqrs.types.ts
 export interface CrearPQRSRequest {
   tipo: string;
   categoria: string;
   descripcion: string;
   emailContacto: string;
+  fotos?: File[];
 }
 
 export interface PQRS {
@@ -14,6 +16,17 @@ export interface PQRS {
   estado: string;
   respuesta?: string;
   emailContacto: string;
+  tiempoEstimado?: string;
+  departamento?: string;
+  creadoEn?: string;
+  fotos?: PqrsFoto[];
+}
+
+export interface PqrsFoto {
+  id: string;
+  nombreOriginal: string;
+  mimeType: string;
+  orden: number;
 }
 
 export interface CambiarEstadoPQRSRequest {
@@ -26,4 +39,5 @@ export interface CrearPQRSResponse {
   success: boolean;
   message?: string;
   radicado?: string;
+  id?: string;
 }

@@ -94,8 +94,9 @@ const AgeAnalyticsPage      = lazy(() => import("../modules/analytics/pages/AgeA
 const IncidentAnalyticsPage = lazy(() => import("../modules/analytics/pages/IncidentAnalyticsPage"))
 
 // --- Atención al Usuario ---
-const PQRSPage       = lazy(() => import("../modules/pqrs/pages/PQRSPage"))
-const AsesoriasPage  = lazy(() => import("../modules/asesorias/pages/AsesoriasPage"))
+const PQRSPage            = lazy(() => import("../modules/pqrs/pages/PQRSPage"))
+const PqrsManagementPage  = lazy(() => import("../modules/pqrs/pages/PqrsManagementPage"))
+const AsesoriasPage       = lazy(() => import("../modules/asesorias/pages/AsesoriasPage"))
 
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -406,6 +407,12 @@ export default function AppRouter() {
           <Route path="/pqrs" element={
             <ProtectedRoute permission={{ module: MODULES.PQRS, action: 'leer' }}>
               <SuspenseWrapper><PQRSPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/pqrs" element={
+            <ProtectedRoute permission={{ module: MODULES.PQRS, action: 'leer' }}>
+              <SuspenseWrapper><PqrsManagementPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
 
