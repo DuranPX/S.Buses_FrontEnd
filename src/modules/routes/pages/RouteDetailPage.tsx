@@ -1,3 +1,13 @@
+// ================================================================
+// PAGE — RouteDetailPage (actualizado)
+// Proyecto: Frontend (S.Buses_FrontEnd)
+// Ruta: src/modules/routes/pages/RouteDetailPage.tsx
+//
+// Cambio respecto a la versión anterior:
+//   - activeBuses ahora es BusPosicion[] (viene de useRouteSocket
+//     que internamente usa useGPSPositions)
+// ================================================================
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRouteDetails } from '../hooks/useRouteDetails';
 import { useRouteSocket } from '../hooks/useRouteSocket';
@@ -5,13 +15,32 @@ import { RouteMap } from '../components/RouteMap';
 import { StopTimeline } from '../components/StopTimeline';
 import { RouteRealtimePanel } from '../components/RouteRealtimePanel';
 import { Loader } from '../../../shared/components/ui/Loader';
+import { useMemo } from 'react';
 
 const RouteDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const { route, isLoading, error } = useRouteDetails(id);
-  const { activeBuses, hasDelay } = useRouteSocket(id);
+
+  
+
+  const trackingRoute = useMemo(
+    () =>
+      route
+        ? {
+            routeId: route.id,
+            rutaNodos: route.rutaNodos ?? [],
+            rutaParaderos: route.paraderos,
+          }
+        : null,
+    [route]
+  );
+
+  const { activeBuses, hasDelay } = useRouteSocket(trackingRoute);
+
+  // activeBuses es BusPosicion[] — RouteMap y RouteRealtimePanel
+  // ya esperan este tipo en sus props actualizadas.
 
   if (isLoading) {
     return (
@@ -27,7 +56,7 @@ const RouteDetailPage = () => {
         <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '1.5rem', borderRadius: '0.5rem', display: 'inline-block' }}>
           <h3>Algo salió mal</h3>
           <p>{error || 'No se encontró la ruta solicitada.'}</p>
-          <button 
+          <button
             onClick={() => navigate('/rutas')}
             style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#6366f1', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
           >
@@ -38,11 +67,14 @@ const RouteDetailPage = () => {
     );
   }
 
+  console.log(activeBuses);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', padding: '1rem', gap: '1.5rem', overflow: 'hidden' }}>
+
       {/* Encabezado */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
-        <button 
+        <button
           onClick={() => navigate('/rutas')}
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
@@ -66,17 +98,17 @@ const RouteDetailPage = () => {
 
       {/* Contenido Principal: Mapa + Panel Lateral */}
       <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        
+
         {/* Izquierda: Mapa */}
         <div style={{ flex: 1, position: 'relative', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
           <RouteMap stops={route.paraderos} nodes={route.rutaNodos} activeBuses={activeBuses} />
         </div>
 
-        {/* Derecha: Paneles de Info (Timeline + Realtime) */}
+        {/* Derecha: Paneles de Info */}
         <div style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', paddingRight: '0.5rem', scrollbarWidth: 'thin' }}>
-          
+
           <RouteRealtimePanel buses={activeBuses} hasDelay={hasDelay} />
-          
+
           <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '1rem', padding: '1.25rem' }}>
             <h4 style={{ margin: '0 0 1rem', fontSize: '0.95rem', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
               📍 Recorrido y Paraderos

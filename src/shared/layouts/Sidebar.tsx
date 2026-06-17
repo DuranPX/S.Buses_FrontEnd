@@ -53,6 +53,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
         // ESTE sí queda visible
         { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Monitor de Incidentes' },
+        { module: MODULES.INCIDENTES_MONITOR, path: '/admin/supervisor', label: 'Monitor de Supervisor' },
       ]
     },
 

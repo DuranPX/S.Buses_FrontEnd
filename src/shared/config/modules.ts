@@ -25,6 +25,7 @@ export const MODULES = {
   TURNO_CONDUCTOR: 'turno_conductor',
   PQRS: 'pqrs',
   ASESORIAS: 'asesorias',
+  INCIDENTES_MONITOR: 'incidentes_monitor',
 } as const;
 
 export type ModuleName = typeof MODULES[keyof typeof MODULES];

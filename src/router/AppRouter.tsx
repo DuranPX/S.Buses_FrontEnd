@@ -20,6 +20,7 @@ import AuthSuccess from "../features/auth/pages/AuthSuccess"
 import CompleteProfile from "../features/auth/pages/CompleteProfile"
 import ProfilePage from "../features/profile/pages/ProfilePage"
 import { Loader } from "../shared/components/ui/Loader"
+import AdminIncidentsPage from "../modules/incidents/pages/AdminIncidentsPage"
 
 
 // ================================================================
@@ -238,6 +239,14 @@ export default function AppRouter() {
               <SuspenseWrapper><IncidentsMonitorPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
+
+          <Route path="/admin/supervisor" element={
+            <ProtectedRoute permission={{ module: MODULES.INCIDENTES_MONITOR, action: 'leer' }}>
+              <SuspenseWrapper><AdminIncidentsPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          
 
           {/* ---- Admin: Empresas ---- */}
           <Route path="/admin/empresas" element={
