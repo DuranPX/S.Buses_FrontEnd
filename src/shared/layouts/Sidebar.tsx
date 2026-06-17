@@ -45,6 +45,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.PARADEROS, path: '/admin/paraderos', label: 'Gestión de Paraderos' },
         { module: MODULES.EMPRESAS, path: '/admin/empresas', label: 'Empresas' },
         { module: MODULES.PQRS, path: '/admin/pqrs', label: 'Gestión PQRS' },
+        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
+        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
+
+        // BLOQUEADOS temporalmente para conductor
+        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
+        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
+        // ESTE sí queda visible
+        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Monitor de Incidentes' },
       ]
     },
 
@@ -53,15 +61,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       items: [
         { module: MODULES.RUTAS, path: '/rutas', label: 'Mapa de Rutas' },
         { module: MODULES.PARADEROS, path: '/paradero', label: 'Paraderos Cercanos' },
-        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
-        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
-
-        // BLOQUEADOS temporalmente para conductor
-        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
-        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
-
-        // ESTE sí queda visible
-        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Monitor de Incidentes' },
+        { module: MODULES.PROGRAMACIONES, path: '/programaciones', label: 'Programación Publica' },
       ]
     },
 
