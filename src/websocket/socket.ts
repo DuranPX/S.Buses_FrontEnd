@@ -18,9 +18,9 @@ const WS_TRANSPORT_URL = import.meta.env.VITE_WS_TRANSPORT_URL;
 type Listener = (...args: any[]) => void;
 
 export type AppSocket = {
-  on:         (event: string, fn: (...args: unknown[]) => void) => void;
-  off:        (event: string, fn: (...args: unknown[]) => void) => void;
-  emit:       (event: string, ...args: unknown[]) => void;
+  on:         (event: string, fn: (...args: any[]) => void) => void;
+  off:        (event: string, fn?: (...args: any[]) => void) => void;
+  emit:       (event: string, ...args: any[]) => void;
   connect:    () => void;
   disconnect: () => void;
   connected:  boolean;
@@ -39,7 +39,11 @@ class MockSocket {
     return this;
   }
 
-  off(event: string, fn: Listener) {
+  off(event: string, fn?: Listener) {
+    if (!fn) {
+      this.listeners.delete(event);
+      return this;
+    }
     const existing = this.listeners.get(event) ?? [];
     this.listeners.set(event, existing.filter((l) => l !== fn));
     return this;
@@ -75,7 +79,6 @@ function createRealSocket(url: string, label: string): Socket {
   return socket;
 }
 
-// ── Instancias ───────────────────────────────────────────────────
 function buildSocket(url: string, label: string): AppSocket {
   if (MOCK_MODE) {
     console.info(`[WS:${label}] 🟡 Mock mode activo`);
@@ -84,17 +87,12 @@ function buildSocket(url: string, label: string): AppSocket {
   return createRealSocket(url, label) as unknown as AppSocket;
 }
 
-/**
- * appSocket — tu servicio ms-notifications (root, sin namespace).
- * Es una instancia directa, igual que antes. Todo el código existente
- * que usaba appSocket.connected, appSocket.on(), etc. sigue funcionando.
- */
-export const notificationsSocket = buildSocket(WS_URL, '');
+// ── Instancias ───────────────────────────────────────────────────
 
-/**
- * transportSocket — ms-transport de tu compañero (/transport).
- * También es una instancia directa.
- */
+/** ms-notifications (puerto 5002) — tracking GPS, alertas, paraderos, mensajes */
+export const notificationsSocket = buildSocket(WS_URL, 'notifications');
+
+/** ms-transport de tu compañero (/transport) */
 export const appSocket = buildSocket(
   `${WS_TRANSPORT_URL}/transport`,
   'transport',

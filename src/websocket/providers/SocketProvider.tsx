@@ -1,21 +1,33 @@
-import { createContext, useContext, type ReactNode } from 'react';
-import { notificationsSocket } from '../socket';
-import type { Socket } from 'socket.io-client';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
+import { notificationsSocket, appSocket } from '../socket';
+import type { AppSocket } from '../socket';
 
-// Tipo unificado compatible con MockSocket y Socket real
-type AnySocket = Pick<Socket, 'on' | 'off' | 'emit' | 'connected' | 'id'>;
-
-const SocketContext = createContext<AnySocket | null>(null);
+const SocketContext = createContext<AppSocket | null>(null);
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
+  useEffect(() => {
+    // Conectar ambos sockets al montar la app
+    notificationsSocket.connect();
+    appSocket.connect();
+
+    return () => {
+      notificationsSocket.disconnect();
+      appSocket.disconnect();
+    };
+  }, []);
+
   return (
-    <SocketContext.Provider value={notificationsSocket as unknown as AnySocket}>
+    <SocketContext.Provider value={notificationsSocket}>
       {children}
     </SocketContext.Provider>
   );
 };
 
-export const useSocketContext = (): AnySocket => {
+/**
+ * Hook para el socket de ms-notifications (puerto 5002).
+ * Usado para: tracking GPS, alertas de paradero, mensajes masivos.
+ */
+export const useSocketContext = (): AppSocket => {
   const ctx = useContext(SocketContext);
   if (!ctx) throw new Error('useSocketContext debe usarse dentro de <SocketProvider>');
   return ctx;
