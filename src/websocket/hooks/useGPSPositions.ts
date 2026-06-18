@@ -14,13 +14,15 @@ import type {
 
 import { NivelRetraso } from '../../types/bus-tracking.types';
 
-const INTERVALO_ACTUALIZACION_MS = 10_000;
-
 export const useGPSPositions = (
   trackingRoute: RutaTrackingData | null,
 ): GPSPositionsState => {
 
   const socket = useSocketContext();
+
+  const joinedRoute = useRef<string | null>(
+    null
+  );
 
   const [state, setState] = useState<GPSPositionsState>({
     buses: new Map(),
@@ -198,15 +200,36 @@ export const useGPSPositions = (
 
   useEffect(() => {
 
-    if (!trackingRoute) return;
+    if (!trackingRoute)
+      return;
+
+    if (
+      joinedRoute.current ===
+      trackingRoute.routeId
+    ) {
+      return;
+    }
+
+    joinedRoute.current =
+      trackingRoute.routeId;
+
+    console.log(
+      '[GPS] JOIN',
+      trackingRoute.routeId
+    );
 
     socket.emit(
       'join_route_tracking',
       {
-        routeId: trackingRoute.routeId,
-        rutaNodos: trackingRoute.rutaNodos,
-        rutaParaderos: trackingRoute.rutaParaderos,
-      },
+        routeId:
+          trackingRoute.routeId,
+
+        rutaNodos:
+          trackingRoute.rutaNodos,
+
+        rutaParaderos:
+          trackingRoute.rutaParaderos,
+      }
     );
 
     setState(s => ({
@@ -215,83 +238,64 @@ export const useGPSPositions = (
       error: null,
     }));
 
+    socket.off(
+      WS_EVENTS.ROUTE_BUS_LOCATION_UPDATED
+    );
+
+    socket.off(
+      WS_EVENTS.NEARBY_BUS_UPDATED
+    );
+
+    socket.off(
+      WS_EVENTS.STOP_ARRIVAL_ESTIMATION
+    );
+
+    socket.off(
+      WS_EVENTS.ROUTE_DELAY_UPDATED
+    );
+
     socket.on(
       WS_EVENTS.ROUTE_BUS_LOCATION_UPDATED,
-      handleLocationUpdated as (...args: unknown[]) => void,
+      handleLocationUpdated
     );
 
     socket.on(
       WS_EVENTS.NEARBY_BUS_UPDATED,
-      handleNearbyBusUpdated as (...args: unknown[]) => void,
+      handleNearbyBusUpdated
     );
 
     socket.on(
       WS_EVENTS.STOP_ARRIVAL_ESTIMATION,
-      handleStopArrivalEstimation as (...args: unknown[]) => void,
+      handleStopArrivalEstimation
     );
 
     socket.on(
       WS_EVENTS.ROUTE_DELAY_UPDATED,
-      handleRouteDelayUpdated as (...args: unknown[]) => void,
+      handleRouteDelayUpdated
     );
 
-    const intervalo = setInterval(() => {
-
-      setState(s => ({
-        ...s,
-        ultimaSincronizacion: new Date().toISOString(),
-      }));
-
-    }, INTERVALO_ACTUALIZACION_MS);
-
     return () => {
+
+      console.log(
+        '[GPS] LEAVE',
+        trackingRoute.routeId
+      );
 
       socket.emit(
         'leave_route_tracking',
         {
-          routeId: trackingRoute.routeId,
-        },
+          routeId:
+            trackingRoute.routeId
+        }
       );
 
-      socket.off(
-        WS_EVENTS.ROUTE_BUS_LOCATION_UPDATED,
-        handleLocationUpdated as (...args: unknown[]) => void,
-      );
-
-      socket.off(
-        WS_EVENTS.NEARBY_BUS_UPDATED,
-        handleNearbyBusUpdated as (...args: unknown[]) => void,
-      );
-
-      socket.off(
-        WS_EVENTS.STOP_ARRIVAL_ESTIMATION,
-        handleStopArrivalEstimation as (...args: unknown[]) => void,
-      );
-
-      socket.off(
-        WS_EVENTS.ROUTE_DELAY_UPDATED,
-        handleRouteDelayUpdated as (...args: unknown[]) => void,
-      );
-
-      clearInterval(intervalo);
-
-      busesRef.current = new Map();
-
-      setState({
-        buses: new Map(),
-        conectado: false,
-        error: null,
-        ultimaSincronizacion: null,
-      });
+      joinedRoute.current =
+        null;
     };
 
   }, [
-    trackingRoute,
+    trackingRoute?.routeId,
     socket,
-    handleLocationUpdated,
-    handleNearbyBusUpdated,
-    handleStopArrivalEstimation,
-    handleRouteDelayUpdated,
   ]);
 
   return state;
