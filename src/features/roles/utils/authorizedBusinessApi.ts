@@ -13,9 +13,14 @@ import type { ModuleName, ActionType } from '../../../shared/config/modules';
 import { permissionStore } from './permissionStore';
 
 export class PermissionDeniedError extends Error {
-  constructor(public module: string, public action: string) {
+  module: string;
+  action: string;
+
+  constructor(module: string, action: string) {
     super(`Permiso denegado: Se requiere permiso '${action}' en el módulo '${module}'.`);
     this.name = 'PermissionDeniedError';
+    this.module = module;
+    this.action = action;
   }
 }
 

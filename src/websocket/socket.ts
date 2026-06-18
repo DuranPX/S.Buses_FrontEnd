@@ -39,7 +39,7 @@ class MockSocket {
     fns.forEach(fn => fn(...args));
     return this;
   }
-
+  connect() { return this; }
   disconnect() {
     this.listeners.clear();
   }
@@ -56,16 +56,16 @@ if (MOCK_MODE) {
   _socket = new MockSocket();
   console.info('[WS] 🟡 Mock mode activo — sin conexión real al servidor');
 } else {
-  const token = localStorage.getItem('token');
 
-  _socket = io(WS_URL, {
-    autoConnect: true,
+  _socket = io(`${WS_URL}/transport`, {
+    autoConnect: false, 
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 2000,
     transports: ['websocket'],
-    auth: {
-      token: `Bearer ${token}`,
+    auth: (cb) => { 
+      const token = localStorage.getItem('token');
+      cb({ token: `Bearer ${token}` });
     },
   });
 
@@ -86,5 +86,13 @@ if (MOCK_MODE) {
   });
 }
 
-export const appSocket = _socket;
+export const appSocket = _socket as {
+  on: (event: string, fn: (...args: unknown[]) => void) => void;
+  off: (event: string, fn: (...args: unknown[]) => void) => void;
+  emit: (event: string, ...args: unknown[]) => void;
+  connect: () => void;
+  disconnect: () => void;
+  connected: boolean;
+  id: string;
+};
 export const isMockSocket = MOCK_MODE;

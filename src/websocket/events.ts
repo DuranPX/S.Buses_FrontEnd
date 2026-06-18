@@ -55,6 +55,10 @@ export const WS_EVENTS = {
   ANALYTICS_INCOME_UPDATED: 'analytics_income_updated',
   ANALYTICS_AGE_UPDATED: 'analytics_age_updated',
   ANALYTICS_INCIDENTS_UPDATED: 'analytics_incidents_updated',
+
+  // --- Mensajes ---
+  MESSAGE_RECEIVED: 'message.received',
+  MESSAGE_READ: 'message.read',
 } as const;
 
 export type WsEvent = typeof WS_EVENTS[keyof typeof WS_EVENTS];
