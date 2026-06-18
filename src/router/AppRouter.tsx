@@ -93,6 +93,11 @@ const IncomeAnalyticsPage   = lazy(() => import("../modules/analytics/pages/Inco
 const AgeAnalyticsPage      = lazy(() => import("../modules/analytics/pages/AgeAnalyticsPage"))
 const IncidentAnalyticsPage = lazy(() => import("../modules/analytics/pages/IncidentAnalyticsPage"))
 
+// --- Messages ---
+const MessagesPage = lazy(
+  () => import("../modules/messages/pages/MessagesPage")
+);
+
 // ================================================================
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -400,8 +405,24 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          <Route
+            path="/mensajes"
+            element={
+              <ProtectedRoute
+                permission={{
+                  module: MODULES.MENSAJES,
+                  action: 'leer'
+                }}
+              >
+                <SuspenseWrapper>
+                  <MessagesPage />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+
           {/* ---- Placeholders restantes (Social) ---- */}
-          {[MODULES.MENSAJES, MODULES.GRUPOS, MODULES.RESENAS,
+          {[MODULES.GRUPOS, MODULES.RESENAS,
             MODULES.PAGOS, MODULES.VALIDACIONES, MODULES.RECARGAS].map(modulo => (
             <Route key={`public-${modulo}`} path={`/${modulo}`} element={
               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>

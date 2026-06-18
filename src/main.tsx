@@ -7,6 +7,8 @@ import { AuthFlowProvider } from "./features/auth/context/AuthFlowContext"
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3"
 import { SocketProvider } from "./websocket/providers/SocketProvider"
 import { WalletProvider } from "./modules/wallet/context/WalletContext"
+import { NotificationsSocketProvider } from "./notifications/NotificationsSocketProvider"
+import { StopAlertsProvider } from "./notifications/StopAlertsProvider"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -15,11 +17,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <AuthProvider>
           <WalletProvider>
             <SocketProvider>
-              <App />
+              <NotificationsSocketProvider>
+                <StopAlertsProvider>
+                  <App />
+                </StopAlertsProvider>
+              </NotificationsSocketProvider>
             </SocketProvider>
           </WalletProvider>
         </AuthProvider>
       </AuthFlowProvider>
     </GoogleReCaptchaProvider>
   </React.StrictMode>
-)
+)
