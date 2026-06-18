@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { FormCard } from "../../../shared/components/cards/FormCard";
 import { Button } from "../../../shared/components/ui/Button";
@@ -42,12 +42,47 @@ interface EditProfileModalProps {
 }
 
 const EditProfileModal = ({ user, onClose, onSaved }: EditProfileModalProps) => {
+  const [direccion, setDireccion] = useState<any>(null);
+
+  useEffect(() => {
+
+    const cargarDireccion = async () => {
+      if (!user.personaId) return;
+      const persona = await businessApi.get(`/persona/${user.personaId}`);
+      console.log('persona completa:', persona.data);
+      console.log('ciudadano:', persona.data.ciudadano);
+      console.log('direccion:', persona.data.ciudadano?.direccion);
+      setDireccion(persona.data.ciudadano?.direccion);
+    };
+
+
+    cargarDireccion();
+
+  }, []);
+
+  useEffect(() => {
+    console.log('direccion cargada:', direccion);
+    if (!direccion) return;
+    setForm(prev => ({
+      ...prev,
+      address: direccion.calle || prev.address,
+      zona: direccion.zona || '',
+    }));
+  }, [direccion]);
+
   const [form, setForm] = useState({
+
     name: user.name || "",
     lastName: user.lastName || "",
     phone: user.phone || "",
     address: user.address || "",
-    birthDate: user.birthDate ? user.birthDate.slice(0, 10) : "",
+
+    zona: direccion?.zona || "",
+
+    birthDate: user.birthDate
+      ? user.birthDate.slice(0, 10)
+      : ""
+
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +92,21 @@ const EditProfileModal = ({ user, onClose, onSaved }: EditProfileModalProps) => 
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
-    if (!form.lastName.trim()) { setError("El apellido es obligatorio."); return; }
+    if (!form.name.trim()) {
+      setError("El nombre es obligatorio.");
+      return;
+    }
+
+    if (!form.lastName.trim()) {
+      setError("El apellido es obligatorio.");
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
+
     try {
-      // 1. Actualizar en ms-security
+
       await updateUserProfile(user.id, {
         name: form.name.trim(),
         lastName: form.lastName.trim(),
@@ -70,33 +114,111 @@ const EditProfileModal = ({ user, onClose, onSaved }: EditProfileModalProps) => 
         address: form.address.trim(),
       });
 
-      // 2. Sincronizar birthDate (y nombre) en ms-business si hay personaId
+
       if (user.personaId) {
+
         try {
-          await businessApi.patch(`/persona/${user.personaId}`, {
-            firstName: form.name.trim(),
-            lastName: form.lastName.trim(),
-            ...(form.birthDate ? { birthDate: form.birthDate } : {}),
-            ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
-          });
-        } catch (bizErr: any) {
-          console.warn("No se pudo sincronizar con ms-business:", bizErr?.response?.data?.message || bizErr.message);
+
+          const persona = await businessApi.get(
+            `/persona/${user.personaId}`
+          );
+
+
+          console.log("PERSONA COMPLETA:", persona.data);
+
+
+          const direccion =
+            persona.data.ciudadano?.direccion;
+
+
+
+          if (direccion?.id) {
+
+
+            await businessApi.patch(
+              `/direccion/${direccion.id}`,
+              {
+                calle: form.address,
+                zona: form.zona
+              }
+            );
+
+
+          } else {
+
+
+            if (!persona.data.ciudadano) {
+
+              console.warn(
+                "La persona no tiene ciudadano asociado"
+              );
+
+              return;
+            }
+
+
+            await businessApi.post(
+              `/direccion`,
+              {
+                ciudadanoId: persona.data.ciudadano.id,
+                calle: form.address || "Sin especificar",
+                ciudad: "Manizales",
+                pais: "Colombia",
+                zona: form.zona
+              }
+            );
+
+          }
+
+
+        } catch (err) {
+
+          console.warn(
+            "No se pudo guardar dirección",
+            err
+          );
+
         }
+
       }
 
       onSaved({
+
         name: form.name.trim(),
+
         lastName: form.lastName.trim(),
+
         phone: form.phone.trim(),
+
         address: form.address.trim(),
-        birthDate: form.birthDate || undefined,
+
+        zona: form.zona,
+
+        birthDate: form.birthDate
+
       });
-      showAlert.success("Perfil actualizado", "Tu información personal fue guardada correctamente.");
+
+
+      showAlert.success(
+        "Perfil actualizado",
+        "Tu información personal fue guardada correctamente."
+      );
+
       onClose();
+
+
     } catch (err: any) {
-      setError(err?.response?.data?.message || err.message || "No se pudo guardar. Intenta de nuevo.");
+
+      setError(
+        err?.response?.data?.message ||
+        err.message ||
+        "No se pudo guardar. Intenta de nuevo."
+      );
+
     } finally {
+
       setIsSaving(false);
+
     }
   };
 
@@ -130,6 +252,14 @@ const EditProfileModal = ({ user, onClose, onSaved }: EditProfileModalProps) => 
 
         <InputField label="Dirección" type="text" value={form.address}
           onChange={handleChange("address")} placeholder="Tu dirección" />
+
+        <InputField
+          label="Zona"
+          type="text"
+          value={form.zona}
+          onChange={handleChange("zona")}
+          placeholder="Ej: Chipre, La Enea, Palermo"
+        />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>

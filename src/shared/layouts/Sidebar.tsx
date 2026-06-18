@@ -44,6 +44,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.RUTAS, path: '/admin/rutas', label: 'Gestión de Rutas' },
         { module: MODULES.PARADEROS, path: '/admin/paraderos', label: 'Gestión de Paraderos' },
         { module: MODULES.EMPRESAS, path: '/admin/empresas', label: 'Empresas' },
+        { module: MODULES.ALERTAS, path: '/admin/alertas', label: 'Alertas Masivas' },
       ]
     },
 

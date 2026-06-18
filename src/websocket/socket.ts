@@ -13,7 +13,9 @@
 import { io, Socket } from 'socket.io-client';
 
 const MOCK_MODE = import.meta.env.VITE_MOCK_WS !== 'false';
-const WS_URL = import.meta.env.VITE_WS_URL;
+const WS_URL =
+  import.meta.env.VITE_WS_URL ||
+  'http://localhost:5002';
 
 // ---- Mini EventEmitter para mock mode ----
 type Listener = (...args: any[]) => void;
@@ -58,16 +60,17 @@ if (MOCK_MODE) {
 } else {
   const token = localStorage.getItem('token');
 
-  _socket = io(WS_URL, {
-    autoConnect: true,
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 2000,
-    transports: ['websocket'],
-    auth: {
-      token: `Bearer ${token}`,
-    },
-  });
+  _socket = io(
+    WS_URL,
+    {
+      autoConnect: true,
+      reconnection: true,
+      transports: ['websocket'],
+      auth: {
+        token: `Bearer ${token}`
+      }
+    }
+  );
 
   _socket.on('connect', () => {
     console.info(`[WS] 🟢 Conectado al servidor: ${WS_URL}`);

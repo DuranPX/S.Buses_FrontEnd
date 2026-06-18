@@ -6,8 +6,9 @@ class SocketService {
   private isConnecting: boolean = false;
 
   constructor() {
-    // Apuntamos al microservicio ms-notifications
-    this.url = import.meta.env.VITE_MS_NOTIFICATIONS_URL || 'http://localhost:5002';
+    this.url =
+      import.meta.env.VITE_MS_BUSINESS_WS_URL ||
+      'http://localhost:3000';
   }
 
   /**
@@ -25,7 +26,12 @@ class SocketService {
 
     this.isConnecting = true;
 
-    this.socket = io(this.url, {
+    console.log(
+      'URL SOCKET:',
+      import.meta.env.VITE_MS_NOTIFICATIONS_URL
+    );
+
+    this.socket = io(`${this.url}/transport`, {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -41,12 +47,21 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (err) => {
-      console.error('❌ Error de conexión en socket:', err.message);
+      console.error('Error de conexión en socket:', err.message);
       this.isConnecting = false;
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log(`🔌 Desconectado: ${reason}`);
+    });
+
+    this.socket.on('alerta_masiva', (data) => {
+      console.log('🚨 ALERTA MASIVA RECIBIDA:', data);
+    });
+
+
+    this.socket.on('alerta_urgente', (data) => {
+      console.log('🚨 ALERTA URGENTE RECIBIDA:', data);
     });
 
     return this.socket;

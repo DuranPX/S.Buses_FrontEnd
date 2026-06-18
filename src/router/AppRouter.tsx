@@ -28,36 +28,36 @@ import { Loader } from "../shared/components/ui/Loader"
 // ================================================================
 
 // --- Rutas (HU-001) ---
-const RoutesPage      = lazy(() => import("../modules/routes/pages/RoutesPage"))
+const RoutesPage = lazy(() => import("../modules/routes/pages/RoutesPage"))
 const RouteDetailPage = lazy(() => import("../modules/routes/pages/RouteDetailPage"))
 
 // --- Paraderos (HU-002) ---
-const StopsPage       = lazy(() => import("../modules/stops/pages/StopsPage"))
+const StopsPage = lazy(() => import("../modules/stops/pages/StopsPage"))
 const NearbyStopsPage = lazy(() => import("../modules/stops/pages/NearbyStopsPage"))
 
 // --- Boletos (HU-003) ---
-const TicketsPage       = lazy(() => import("../modules/tickets/pages/TicketsPage"))
-const AbordajePage      = lazy(() => import("../modules/tickets/pages/AbordajePage"))
+const TicketsPage = lazy(() => import("../modules/tickets/pages/TicketsPage"))
+const AbordajePage = lazy(() => import("../modules/tickets/pages/AbordajePage"))
 const TicketSuccessPage = lazy(() => import("../modules/tickets/pages/TicketSuccessPage"))
 
 // --- Viajes (HU-004 + HU-005) ---
-const FinishTripPage    = lazy(() => import("../modules/trips/pages/FinishTripPage"))
+const FinishTripPage = lazy(() => import("../modules/trips/pages/FinishTripPage"))
 const TripCompletedPage = lazy(() => import("../modules/trips/pages/TripCompletedPage"))
-const TripHistoryPage   = lazy(() => import("../modules/trips/pages/TripHistoryPage"))
-const TripDetailPage    = lazy(() => import("../modules/trips/pages/TripDetailPage"))
+const TripHistoryPage = lazy(() => import("../modules/trips/pages/TripHistoryPage"))
+const TripDetailPage = lazy(() => import("../modules/trips/pages/TripDetailPage"))
 
 // --- Conductores / Turnos (HU-006) ---
 const TurnoActualPage = lazy(() => import("../modules/drivers/pages/TurnoActualPage"))
 
 // --- Incidentes (HU-007 + HU-008) ---
-const CreateIncidentPage    = lazy(() => import("../modules/incidents/pages/CreateIncidentPage"))
-const IncidentsMonitorPage  = lazy(() => import("../modules/incidents/pages/IncidentsMonitorPage"))
-const IncidentsHistoryPage  = lazy(() => import("../modules/incidents/pages/IncidentsHistoryPage"))
-const IncidentsByBusPage  = lazy(() => import("../modules/incidents/pages/IncidentsByBusPage"))
+const CreateIncidentPage = lazy(() => import("../modules/incidents/pages/CreateIncidentPage"))
+const IncidentsMonitorPage = lazy(() => import("../modules/incidents/pages/IncidentsMonitorPage"))
+const IncidentsHistoryPage = lazy(() => import("../modules/incidents/pages/IncidentsHistoryPage"))
+const IncidentsByBusPage = lazy(() => import("../modules/incidents/pages/IncidentsByBusPage"))
 
 // --- Admin: Rutas (HU-009) ---
-const AdminRoutesPage  = lazy(() => import("../modules/admin/routes/pages/AdminRoutesPage"))
-const CreateRoutePage  = lazy(() => import("../modules/admin/routes/pages/CreateRoutePage"))
+const AdminRoutesPage = lazy(() => import("../modules/admin/routes/pages/AdminRoutesPage"))
+const CreateRoutePage = lazy(() => import("../modules/admin/routes/pages/CreateRoutePage"))
 
 // --- Admin: Conductores ---
 const AdminDriversPage = lazy(() => import("../modules/admin/drivers/pages/AdminDriversPage"))
@@ -71,27 +71,34 @@ const AdminStopsPage = lazy(() => import("../modules/admin/stops/pages/AdminStop
 const CreateStopPage = lazy(() => import("../modules/admin/stops/pages/CreateStopPage"))
 
 // --- Admin: Programaciones (HU-011) ---
-const SchedulesPage       = lazy(() => import("../modules/admin/schedules/pages/SchedulesPage"))
-const CreateSchedulePage  = lazy(() => import("../modules/admin/schedules/pages/CreateSchedulePage"))
+const SchedulesPage = lazy(() => import("../modules/admin/schedules/pages/SchedulesPage"))
+const CreateSchedulePage = lazy(() => import("../modules/admin/schedules/pages/CreateSchedulePage"))
 const SchedulesPublicPage = lazy(() => import("../modules/schedules/pages/SchedulesPublicPage"))
 
 // --- Admin: Buses (HU-012) ---
-const BusesPage      = lazy(() => import("../modules/admin/buses/pages/BusesPage"))
-const CreateBusPage  = lazy(() => import("../modules/admin/buses/pages/CreateBusPage"))
+const BusesPage = lazy(() => import("../modules/admin/buses/pages/BusesPage"))
+const CreateBusPage = lazy(() => import("../modules/admin/buses/pages/CreateBusPage"))
 
 // --- Admin: Empresas ---
-const EmpresasPage      = lazy(() => import("../modules/admin/empresas/pages/EmpresasPage"))
+const EmpresasPage = lazy(() => import("../modules/admin/empresas/pages/EmpresasPage"))
 const CreateEmpresaPage = lazy(() => import("../modules/admin/empresas/pages/CreateEmpresaPage"))
 
 // --- Cartera (HU-013) ---
 const RechargePage = lazy(() => import("../modules/wallet/pages/RechargePage"))
-const PaymentPage  = lazy(() => import("../modules/wallet/pages/PaymentPage"))
+const PaymentPage = lazy(() => import("../modules/wallet/pages/PaymentPage"))
 const EpaycoResponsePage = lazy(() => import("../modules/admin/pagos/pages/EpaycoResponsePage"))
 
 // --- Analíticas (HU-014/015/016) ---
-const IncomeAnalyticsPage   = lazy(() => import("../modules/analytics/pages/IncomeAnalyticsPage"))
-const AgeAnalyticsPage      = lazy(() => import("../modules/analytics/pages/AgeAnalyticsPage"))
+const IncomeAnalyticsPage = lazy(() => import("../modules/analytics/pages/IncomeAnalyticsPage"))
+const AgeAnalyticsPage = lazy(() => import("../modules/analytics/pages/AgeAnalyticsPage"))
 const IncidentAnalyticsPage = lazy(() => import("../modules/analytics/pages/IncidentAnalyticsPage"))
+
+// --- Social: Grupos (HU-ENTR-3-006/009/010/011) ---
+const GruposPage = lazy(() => import("../modules/social/pages/GruposPage"))
+const GrupoDetailPage = lazy(() => import("../modules/social/pages/GrupoDetailPage"))
+
+// --- Alertas Masivas (HU-ENTR-3-007) ---
+const AlertasMasivasPage = lazy(() => import("../modules/admin/alertas/pages/AlertasMasivasPage"))
 
 // ================================================================
 
@@ -400,15 +407,34 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          {/* ---- Social: Grupos (HU-ENTR-3-006/009/010/011) ---- */}
+          <Route path="/grupos" element={
+            <ProtectedRoute permission={{ module: MODULES.GRUPOS, action: 'leer' }}>
+              <SuspenseWrapper><GruposPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/grupos/:id" element={
+            <ProtectedRoute permission={{ module: MODULES.GRUPOS, action: 'leer' }}>
+              <SuspenseWrapper><GrupoDetailPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
           {/* ---- Placeholders restantes (Social) ---- */}
-          {[MODULES.MENSAJES, MODULES.GRUPOS, MODULES.RESENAS,
-            MODULES.PAGOS, MODULES.VALIDACIONES, MODULES.RECARGAS].map(modulo => (
+          {[MODULES.MENSAJES, MODULES.RESENAS,
+          MODULES.PAGOS, MODULES.VALIDACIONES, MODULES.RECARGAS].map(modulo => (
             <Route key={`public-${modulo}`} path={`/${modulo}`} element={
               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
                 <GenericModulePlaceholder moduleName={modulo} />
               </ProtectedRoute>
             } />
           ))}
+
+          <Route path="/admin/alertas" element={
+            <ProtectedRoute permission={{ module: MODULES.ALERTAS, action: 'escribir' }}>
+              <SuspenseWrapper><AlertasMasivasPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -23,6 +23,7 @@ export const MODULES = {
   CARTERA: 'cartera',
   ANALITICAS: 'analiticas',
   TURNO_CONDUCTOR: 'turno_conductor',
+  ALERTAS: 'alertas',
 } as const;
 
 export type ModuleName = typeof MODULES[keyof typeof MODULES];
