@@ -23,6 +23,7 @@ export const MODULES = {
   CARTERA: 'cartera',
   ANALITICAS: 'analiticas',
   TURNO_CONDUCTOR: 'turno_conductor',
+  ALERTAS: 'alertas',
   PQRS: 'pqrs',
   ASESORIAS: 'asesorias',
   INCIDENTES_MONITOR: 'incidentes_monitor',

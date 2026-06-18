@@ -56,6 +56,12 @@ export const WS_EVENTS = {
   ANALYTICS_AGE_UPDATED: 'analytics_age_updated',
   ANALYTICS_INCIDENTS_UPDATED: 'analytics_incidents_updated',
 
+  // --- Grupos ---
+  GRUPO_NOTIFICACION: 'grupo_notificacion',
+  MENSAJE_NUEVO: 'mensaje_nuevo',
+  MENSAJE_GRUPO_NUEVO: 'mensaje_grupo_nuevo',
+  ALERTA_MASIVA: 'alerta_masiva',
+  
   // --- Mensajes ---
   MESSAGE_RECEIVED: 'message.received',
   MESSAGE_READ: 'message.read',

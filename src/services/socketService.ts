@@ -7,17 +7,16 @@ class SocketService {
 
   constructor() {
     // Apuntamos al microservicio ms-notifications
-    this.url = import.meta.env.VITE_MS_NOTIFICATIONS_URL || 'http://localhost:5002';
+    this.url = import.meta.env.VITE_MS_NOTIFICATIONS_URL || 'http://localhost:5002/';
   }
 
   /**
-   * Conecta el socket enviando el token JWT.
-   * Patrón Singleton: solo inicializa si no existe o está desconectado.
-   */
-  public connect(token: string): Socket {
-    if (this.socket && this.socket.connected) {
-      return this.socket;
-    }
+   
+Conecta el socket enviando el token JWT.
+Patrón Singleton: solo inicializa si no existe o está desconectado.*/
+public connect(token: string): Socket {
+  if (this.socket && this.socket.connected) {
+    return this.socket;}
 
     if (this.isConnecting) {
       return this.socket!;
@@ -46,7 +45,7 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log(`🔌 Desconectado: ${reason}`);
+      console.log(`❌ Desconectado: ${reason}`);
     });
 
     return this.socket;
