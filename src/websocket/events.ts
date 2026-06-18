@@ -61,6 +61,10 @@ export const WS_EVENTS = {
   MENSAJE_NUEVO: 'mensaje_nuevo',
   MENSAJE_GRUPO_NUEVO: 'mensaje_grupo_nuevo',
   ALERTA_MASIVA: 'alerta_masiva',
+  
+  // --- Mensajes ---
+  MESSAGE_RECEIVED: 'message.received',
+  MESSAGE_READ: 'message.read',
 } as const;
 
 export type WsEvent = typeof WS_EVENTS[keyof typeof WS_EVENTS];

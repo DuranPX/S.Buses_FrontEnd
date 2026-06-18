@@ -99,6 +99,10 @@ const GrupoDetailPage = lazy(() => import("../modules/social/pages/GrupoDetailPa
 
 // --- Alertas Masivas (HU-ENTR-3-007) ---
 const AlertasMasivasPage = lazy(() => import("../modules/admin/alertas/pages/AlertasMasivasPage"))
+// --- Messages ---
+const MessagesPage = lazy(
+  () => import("../modules/messages/pages/MessagesPage")
+);
 
 // ================================================================
 
@@ -407,6 +411,22 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          <Route
+            path="/mensajes"
+            element={
+              <ProtectedRoute
+                permission={{
+                  module: MODULES.MENSAJES,
+                  action: 'leer'
+                }}
+              >
+                <SuspenseWrapper>
+                  <MessagesPage />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+
           {/* ---- Social: Grupos (HU-ENTR-3-006/009/010/011) ---- */}
           <Route path="/grupos" element={
             <ProtectedRoute permission={{ module: MODULES.GRUPOS, action: 'leer' }}>
@@ -420,14 +440,39 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
-          {/* ---- Placeholders restantes (Social) ---- */}
-          {[MODULES.MENSAJES, MODULES.RESENAS,
-          MODULES.PAGOS, MODULES.VALIDACIONES, MODULES.RECARGAS].map(modulo => (
-            <Route key={`public-${modulo}`} path={`/${modulo}`} element={
-              <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
-                <GenericModulePlaceholder moduleName={modulo} />
+          {/* ---- Mensajes ---- */}
+          <Route
+            path="/mensajes"
+            element={
+              <ProtectedRoute
+                permission={{
+                  module: MODULES.MENSAJES,
+                  action: 'leer'
+                }}
+              >
+                <SuspenseWrapper>
+                  <MessagesPage />
+                </SuspenseWrapper>
               </ProtectedRoute>
-            } />
+            }
+          />
+
+          {/* ---- Placeholders restantes (Social) ---- */}
+          {[
+            MODULES.RESENAS,
+            MODULES.PAGOS,
+            MODULES.VALIDACIONES,
+            MODULES.RECARGAS
+          ].map(modulo => (
+            <Route
+              key={`public-${modulo}`}
+              path={`/${modulo}`}
+              element={
+                <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>
+                  <GenericModulePlaceholder moduleName={modulo} />
+                </ProtectedRoute>
+              }
+            />
           ))}
 
           <Route path="/admin/alertas" element={
