@@ -1,5 +1,10 @@
 // TIPOS — Bus Tracking en Tiempo Real
 //src/types/bus-tracking.types.ts
+import type {
+  RouteNode,
+  RouteStop,
+} from '../modules/routes/types/route.types';
+
 
 export const BusEstado = {
   Operativo:     'Operativo',
@@ -124,4 +129,41 @@ export interface BusMarkerProps {
 
 export interface BusPopupProps {
   bus: BusPosicion;
+}
+
+export interface RutaTrackingNodo {
+  id: string;
+  nodo: {
+    id: string;
+    latitud: string;
+    longitud: string;
+  };
+  orden: number;
+}
+
+export interface RutaTrackingParadero {
+  id: string;
+  paradero: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    latitud: string;
+    longitud: string;
+    tipo: string;
+    estado: boolean;
+    nodo: {
+      id: string;
+      latitud: string;
+      longitud: string;
+    };
+  };
+  orden: number;
+  distancia_desde_anterior: number | null;
+  tiempo_estimado: number | null;
+}
+
+export interface RutaTrackingData {
+  routeId: string;
+  rutaNodos: RouteNode[];
+  rutaParaderos: RouteStop[];
 }

@@ -104,6 +104,8 @@ export interface User {
   phone?: string;
   address?: string;
   photo?: string;
+  alertaClimaActiva?: boolean;
+  horarioViaje?: string;
   // ── NUEVO: fecha de nacimiento para métricas de rango etario ──
   birthDate?: string;
   roles: Role[];

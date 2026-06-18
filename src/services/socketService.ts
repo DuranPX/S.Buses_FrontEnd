@@ -6,19 +6,17 @@ class SocketService {
   private isConnecting: boolean = false;
 
   constructor() {
-    this.url =
-      import.meta.env.VITE_MS_BUSINESS_WS_URL ||
-      'http://localhost:3000';
+    // Apuntamos al microservicio ms-notifications
+    this.url = import.meta.env.VITE_MS_NOTIFICATIONS_URL || 'http://localhost:5002/';
   }
 
   /**
-   * Conecta el socket enviando el token JWT.
-   * Patrón Singleton: solo inicializa si no existe o está desconectado.
-   */
-  public connect(token: string): Socket {
-    if (this.socket && this.socket.connected) {
-      return this.socket;
-    }
+   
+Conecta el socket enviando el token JWT.
+Patrón Singleton: solo inicializa si no existe o está desconectado.*/
+public connect(token: string): Socket {
+  if (this.socket && this.socket.connected) {
+    return this.socket;}
 
     if (this.isConnecting) {
       return this.socket!;
@@ -26,12 +24,7 @@ class SocketService {
 
     this.isConnecting = true;
 
-    console.log(
-      'URL SOCKET:',
-      import.meta.env.VITE_MS_NOTIFICATIONS_URL
-    );
-
-    this.socket = io(`${this.url}/transport`, {
+    this.socket = io(this.url, {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -47,21 +40,12 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (err) => {
-      console.error('Error de conexión en socket:', err.message);
+      console.error('❌ Error de conexión en socket:', err.message);
       this.isConnecting = false;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log(`🔌 Desconectado: ${reason}`);
-    });
-
-    this.socket.on('alerta_masiva', (data) => {
-      console.log('🚨 ALERTA MASIVA RECIBIDA:', data);
-    });
-
-
-    this.socket.on('alerta_urgente', (data) => {
-      console.log('🚨 ALERTA URGENTE RECIBIDA:', data);
+      console.log(`❌ Desconectado: ${reason}`);
     });
 
     return this.socket;

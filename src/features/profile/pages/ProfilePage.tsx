@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { FormCard } from "../../../shared/components/cards/FormCard";
 import { Button } from "../../../shared/components/ui/Button";
@@ -321,6 +321,10 @@ export const ProfilePage = () => {
     confirmPassword: ""
   });
 
+  const [alertaClimaActiva, setAlertaClimaActiva] = useState(user?.alertaClimaActiva || false);
+  const [horarioViaje, setHorarioViaje] = useState(user?.horarioViaje || "06:00");
+  const [savingClima, setSavingClima] = useState(false);
+
   if (!user) return null;
 
   const executeUnlink = async (provider: string) => {
@@ -410,6 +414,62 @@ export const ProfilePage = () => {
     try {
       return new Date(dateStr + 'T00:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
     } catch { return dateStr; }
+  };
+
+  useEffect(() => {
+    const fetchCiudadano = async () => {
+      if (!user?.ciudadanoId) return;
+      try {
+        const { data } = await businessApi.get(`/ciudadano/${user.ciudadanoId}`);
+        if (data) {
+          setAlertaClimaActiva(data.alertaClimaActiva || false);
+          if (data.horarioViaje) {
+            setHorarioViaje(data.horarioViaje);
+          }
+        }
+      } catch (err) {
+        console.error("No se pudo cargar el perfil de ciudadano", err);
+      }
+    };
+    fetchCiudadano();
+  }, [user?.ciudadanoId]);
+
+  const handleSaveClima = async (activa: boolean, horario: string) => {
+    if (!user.ciudadanoId) {
+      showAlert.error("Error", "No se encontró un perfil de ciudadano asociado para activar esta opción.");
+      setAlertaClimaActiva(!activa);
+      return;
+    }
+    setSavingClima(true);
+    try {
+      await businessApi.patch(`/ciudadano/${user.ciudadanoId}/alerta-clima`, {
+        activa: activa,
+        horarioViaje: activa ? horario : undefined
+      });
+      // Ya no actualizamos el updateUser con alertaClimaActiva porque no está en su interfaz, solo manejamos el estado local.
+      showAlert.success("Guardado", "Preferencia de clima actualizada.");
+    } catch (err) {
+      console.error(err);
+      showAlert.error("Error", "No se pudo actualizar la configuración de clima.");
+      // Revertir estado si falla
+      setAlertaClimaActiva(!activa);
+    } finally {
+      setSavingClima(false);
+    }
+  };
+
+  const handleToggleClima = () => {
+    const newVal = !alertaClimaActiva;
+    setAlertaClimaActiva(newVal);
+    handleSaveClima(newVal, horarioViaje);
+  };
+
+  const handleChangeHorario = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHorarioViaje(e.target.value);
+  };
+
+  const submitHorarioClima = () => {
+    handleSaveClima(alertaClimaActiva, horarioViaje);
   };
 
   const linkedProviders = user.authExternals || [];
@@ -611,6 +671,55 @@ export const ProfilePage = () => {
                 </div>
               )}
             </div>
+          </div>
+        </FormCard>
+      </div>
+
+      {/* Alertas y Notificaciones */}
+      <div style={{ marginTop: '2rem' }}>
+        <FormCard title="Alertas y Notificaciones">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <div style={{ fontWeight: 600 }}>⛅ Alertas Automáticas de Clima</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Recibe un pronóstico cada mañana si tienes probabilidad de lluvia antes de tu viaje.</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: alertaClimaActiva ? '#22c55e' : 'var(--text-muted)' }}>
+                  {savingClima ? "Guardando..." : alertaClimaActiva ? "ACTIVADO" : "DESACTIVADO"}
+                </span>
+                <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '24px' }}>
+                  <input type="checkbox" checked={alertaClimaActiva} onChange={handleToggleClima} disabled={savingClima} style={{ opacity: 0, width: 0, height: 0 }} />
+                  <span style={{
+                    position: 'absolute', cursor: savingClima ? 'not-allowed' : 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: alertaClimaActiva ? 'var(--accent-color, #3b82f6)' : 'rgba(255,255,255,0.1)', transition: '.4s', borderRadius: '24px'
+                  }}>
+                    <span style={{
+                      position: 'absolute', content: '""', height: '16px', width: '16px', left: '4px', bottom: '4px',
+                      backgroundColor: 'white', transition: '.4s', borderRadius: '50%', transform: alertaClimaActiva ? 'translateX(16px)' : 'translateX(0)'
+                    }} />
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {alertaClimaActiva && (
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.3s ease' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Horario habitual de viaje</label>
+                  <input 
+                    type="time" 
+                    value={horarioViaje}
+                    onChange={handleChangeHorario}
+                    style={{ 
+                      marginTop: '0.4rem', width: '100%', padding: '0.6rem 1rem', borderRadius: 'var(--radius-md)', 
+                      border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'inherit', fontSize: '1rem' 
+                    }}
+                  />
+                </div>
+                <Button label={savingClima ? "Guardando..." : "Actualizar hora"} onClick={submitHorarioClima} disabled={savingClima || !horarioViaje} />
+              </div>
+            )}
           </div>
         </FormCard>
       </div>
