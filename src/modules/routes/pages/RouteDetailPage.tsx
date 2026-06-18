@@ -16,13 +16,30 @@ import { StopTimeline } from '../components/StopTimeline';
 import { RouteRealtimePanel } from '../components/RouteRealtimePanel';
 import { StopAlertPanel } from '../../alerts/components/StopAlertPanel';
 import { Loader } from '../../../shared/components/ui/Loader';
+import { useMemo } from 'react';
 
 const RouteDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const { route, isLoading, error } = useRouteDetails(id);
-  const { activeBuses, hasDelay } = useRouteSocket(id);
+
+  
+
+  const trackingRoute = useMemo(
+    () =>
+      route
+        ? {
+            routeId: route.id,
+            rutaNodos: route.rutaNodos ?? [],
+            rutaParaderos: route.paraderos,
+          }
+        : null,
+    [route]
+  );
+
+  const { activeBuses, hasDelay } = useRouteSocket(trackingRoute);
+
   // activeBuses es BusPosicion[] — RouteMap y RouteRealtimePanel
   // ya esperan este tipo en sus props actualizadas.
 
@@ -50,6 +67,8 @@ const RouteDetailPage = () => {
       </div>
     );
   }
+
+  console.log(activeBuses);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', padding: '1rem', gap: '1.5rem', overflow: 'hidden' }}>

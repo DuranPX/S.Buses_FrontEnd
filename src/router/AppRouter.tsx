@@ -20,6 +20,7 @@ import AuthSuccess from "../features/auth/pages/AuthSuccess"
 import CompleteProfile from "../features/auth/pages/CompleteProfile"
 import ProfilePage from "../features/profile/pages/ProfilePage"
 import { Loader } from "../shared/components/ui/Loader"
+import AdminIncidentsPage from "../modules/incidents/pages/AdminIncidentsPage"
 
 
 // ================================================================
@@ -92,6 +93,11 @@ const EpaycoResponsePage = lazy(() => import("../modules/admin/pagos/pages/Epayc
 const IncomeAnalyticsPage   = lazy(() => import("../modules/analytics/pages/IncomeAnalyticsPage"))
 const AgeAnalyticsPage      = lazy(() => import("../modules/analytics/pages/AgeAnalyticsPage"))
 const IncidentAnalyticsPage = lazy(() => import("../modules/analytics/pages/IncidentAnalyticsPage"))
+
+// --- Atención al Usuario ---
+const PQRSPage            = lazy(() => import("../modules/pqrs/pages/PQRSPage"))
+const PqrsManagementPage  = lazy(() => import("../modules/pqrs/pages/PqrsManagementPage"))
+const AsesoriasPage       = lazy(() => import("../modules/asesorias/pages/AsesoriasPage"))
 
 // --- Messages ---
 const MessagesPage = lazy(
@@ -239,6 +245,14 @@ export default function AppRouter() {
               <SuspenseWrapper><IncidentsMonitorPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
+
+          <Route path="/admin/supervisor" element={
+            <ProtectedRoute permission={{ module: MODULES.INCIDENTES_MONITOR, action: 'leer' }}>
+              <SuspenseWrapper><AdminIncidentsPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          
 
           {/* ---- Admin: Empresas ---- */}
           <Route path="/admin/empresas" element={
@@ -405,6 +419,23 @@ export default function AppRouter() {
             </ProtectedRoute>
           } />
 
+          <Route path="/pqrs" element={
+            <ProtectedRoute permission={{ module: MODULES.PQRS, action: 'leer' }}>
+              <SuspenseWrapper><PQRSPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/pqrs" element={
+            <ProtectedRoute permission={{ module: MODULES.PQRS, action: 'leer' }}>
+              <SuspenseWrapper><PqrsManagementPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/asesorias" element={
+            <ProtectedRoute permission={{ module: MODULES.ASESORIAS, action: 'leer' }}>
+              <SuspenseWrapper><AsesoriasPage /></SuspenseWrapper>
+            </ProtectedRoute>
+          } />
           <Route
             path="/mensajes"
             element={

@@ -44,6 +44,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.RUTAS, path: '/admin/rutas', label: 'Gestión de Rutas' },
         { module: MODULES.PARADEROS, path: '/admin/paraderos', label: 'Gestión de Paraderos' },
         { module: MODULES.EMPRESAS, path: '/admin/empresas', label: 'Empresas' },
+        { module: MODULES.PQRS, path: '/admin/pqrs', label: 'Gestión PQRS' },
+        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
+        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
+
+        // BLOQUEADOS temporalmente para conductor
+        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
+        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
+        // ESTE sí queda visible
+        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Monitor de Incidentes' },
+        { module: MODULES.INCIDENTES_MONITOR, path: '/admin/supervisor', label: 'Monitor de Supervisor' },
       ]
     },
 
@@ -52,15 +62,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       items: [
         { module: MODULES.RUTAS, path: '/rutas', label: 'Mapa de Rutas' },
         { module: MODULES.PARADEROS, path: '/paradero', label: 'Paraderos Cercanos' },
-        { module: MODULES.BUSES, path: '/admin/buses', label: 'Buses' },
-        { module: MODULES.CONDUCTORES, path: '/admin/conductores', label: 'Conductores' },
-
-        // BLOQUEADOS temporalmente para conductor
-        { module: MODULES.TURNOS, path: '/admin/turnos', label: 'Turnos' },
-        { module: MODULES.PROGRAMACIONES, path: '/admin/programaciones', label: 'Programaciones' },
-
-        // ESTE sí queda visible
-        { module: MODULES.INCIDENTES, path: '/admin/incidentes', label: 'Monitor de Incidentes' },
+        { module: MODULES.PROGRAMACIONES, path: '/programaciones', label: 'Programación Publica' },
       ]
     },
 
@@ -108,6 +110,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         { module: MODULES.MENSAJES, path: '/mensajes', label: 'Mensajes' },
         { module: MODULES.GRUPOS, path: '/grupos', label: 'Grupos' },
         { module: MODULES.RESENAS, path: '/resenas', label: 'Reseñas' },
+      ]
+    },
+
+    {
+      label: 'Atención al Usuario',
+      items: [
+        { module: MODULES.PQRS, path: '/pqrs', label: 'PQRS' },
+        { module: MODULES.ASESORIAS, path: '/asesorias', label: 'Asesorías' },
       ]
     }
   ];

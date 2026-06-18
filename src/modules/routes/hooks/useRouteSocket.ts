@@ -1,9 +1,15 @@
 //src/modules/routes/hooks/useRouteSocket.ts
 
 import { useMemo } from 'react';
+
 import { useGPSPositions } from '../../../websocket/hooks/useGPSPositions';
+
 import { NivelRetraso } from '../../../types/bus-tracking.types';
-import type { BusPosicion } from '../../../types/bus-tracking.types';
+
+import type {
+  BusPosicion,
+  RutaTrackingData,
+} from '../../../types/bus-tracking.types';
 
 interface UseRouteSocketReturn {
   activeBuses: BusPosicion[];
@@ -12,18 +18,35 @@ interface UseRouteSocketReturn {
   ultimaSincronizacion: string | null;
 }
 
-export const useRouteSocket = (routeId: string | undefined): UseRouteSocketReturn => {
-  const { buses, conectado, ultimaSincronizacion } = useGPSPositions(routeId ?? '');
+export const useRouteSocket = (
+  trackingRoute: RutaTrackingData | null,
+): UseRouteSocketReturn => {
 
-  const activeBuses = useMemo(() => Array.from(buses.values()), [buses]);
+  const {
+    buses,
+    conectado,
+    ultimaSincronizacion,
+  } = useGPSPositions(trackingRoute);
 
-  const hasDelay = useMemo(() =>
-    activeBuses.some(b =>
-      b.nivelRetraso === NivelRetraso.Critico ||
-      b.nivelRetraso === NivelRetraso.Moderado
-    ),
-    [activeBuses]
+  const activeBuses = useMemo(
+    () => Array.from(buses.values()),
+    [buses],
   );
 
-  return { activeBuses, hasDelay, conectado, ultimaSincronizacion };
+  const hasDelay = useMemo(
+    () =>
+      activeBuses.some(
+        b =>
+          b.nivelRetraso === NivelRetraso.Critico ||
+          b.nivelRetraso === NivelRetraso.Moderado,
+      ),
+    [activeBuses],
+  );
+
+  return {
+    activeBuses,
+    hasDelay,
+    conectado,
+    ultimaSincronizacion,
+  };
 };
