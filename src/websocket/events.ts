@@ -63,8 +63,13 @@ export const WS_EVENTS = {
   ALERTA_MASIVA: 'alerta_masiva',
   
   // --- Mensajes ---
-  MESSAGE_RECEIVED: 'message.received',
-  MESSAGE_READ: 'message.read',
+  // Importante: estos deben coincidir con WS_EVENTS.PRIVATE_MESSAGE_RECEIVED
+  // y WS_EVENTS.PRIVATE_MESSAGE_READ del backend (transport.gateway.ts), NO
+  // con los nombres de los eventos internos de NestJS EventEmitter2
+  // ('message.received'/'message.read'), que nunca llegan al cliente.
+  PRIVATE_MESSAGE_RECEIVED: 'private_message_received',
+  PRIVATE_MESSAGE_READ: 'private_message_read',
+  MARK_MESSAGE_READ: 'mark_message_read',
 } as const;
 
 export type WsEvent = typeof WS_EVENTS[keyof typeof WS_EVENTS];
