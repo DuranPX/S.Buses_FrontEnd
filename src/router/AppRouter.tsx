@@ -99,6 +99,12 @@ const PQRSPage            = lazy(() => import("../modules/pqrs/pages/PQRSPage"))
 const PqrsManagementPage  = lazy(() => import("../modules/pqrs/pages/PqrsManagementPage"))
 const AsesoriasPage       = lazy(() => import("../modules/asesorias/pages/AsesoriasPage"))
 
+// --- Messages ---
+const MessagesPage = lazy(
+  () => import("../modules/messages/pages/MessagesPage")
+);
+
+// ================================================================
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><Loader /></div>}>
@@ -430,9 +436,24 @@ export default function AppRouter() {
               <SuspenseWrapper><AsesoriasPage /></SuspenseWrapper>
             </ProtectedRoute>
           } />
+          <Route
+            path="/mensajes"
+            element={
+              <ProtectedRoute
+                permission={{
+                  module: MODULES.MENSAJES,
+                  action: 'leer'
+                }}
+              >
+                <SuspenseWrapper>
+                  <MessagesPage />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
 
           {/* ---- Placeholders restantes (Social) ---- */}
-          {[MODULES.MENSAJES, MODULES.GRUPOS, MODULES.RESENAS,
+          {[MODULES.GRUPOS, MODULES.RESENAS,
             MODULES.PAGOS, MODULES.VALIDACIONES, MODULES.RECARGAS].map(modulo => (
             <Route key={`public-${modulo}`} path={`/${modulo}`} element={
               <ProtectedRoute permission={{ module: modulo, action: 'leer' }}>

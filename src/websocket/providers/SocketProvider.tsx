@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { appSocket } from '../socket';
+import { notificationsSocket } from '../socket';
 import type { Socket } from 'socket.io-client';
 
 // Tipo unificado compatible con MockSocket y Socket real
@@ -9,7 +9,7 @@ const SocketContext = createContext<AnySocket | null>(null);
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   return (
-    <SocketContext.Provider value={appSocket as unknown as AnySocket}>
+    <SocketContext.Provider value={notificationsSocket as unknown as AnySocket}>
       {children}
     </SocketContext.Provider>
   );

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
@@ -7,10 +7,19 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 import { RoleSelector } from "../../features/auth/components/RoleSelector";
 import { ProfileCompletionGuard } from "../../features/auth/components/ProfileCompletionGuard";
 import { Loader } from "../components/ui/Loader";
+import { listenForServiceWorkerNavigation } from "../../notifications/pushNotifications";
 
 export const MainLayout = () => {
   const { activeRole, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Acción rápida "Preparar pago" desde una notificación push de alerta de
+  // paradero, cuando la app ya está abierta en segundo plano: el Service
+  // Worker enfoca la pestaña y manda este mensaje en vez de recargar.
+  useEffect(() => {
+    return listenForServiceWorkerNavigation((url) => navigate(url));
+  }, [navigate]);
 
   if (isLoading) return <Loader />;
 

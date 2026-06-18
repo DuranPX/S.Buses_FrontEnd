@@ -5,6 +5,7 @@ import { useAuthFlow } from "./AuthFlowContext";
 import { businessApi } from "../../../api/api";
 import { synchronizeRolePermissions } from "../../roles/utils/permissionUtils";
 import { permissionStore } from "../../roles/utils/permissionStore";
+import { appSocket, isMockSocket } from '../../../websocket/socket';
 
 const DriverLicenseModal = ({ personaId, onSuccess, onClose }: { personaId: string; onSuccess: (conductorId: string) => void; onClose: () => void }) => {
   const [licencia, setLicencia] = useState('');
@@ -232,8 +233,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUser({ id: userId || "user-1", name, lastName, email, phone, address, photo, roles: [roleObj], authExternals, ciudadanoId, conductorId, birthDate, personaId });
       handleSetActiveRole(roleObj);
+        // Conectar el socket con el token ya guardado en localStorage
+        if (!isMockSocket && !appSocket.connected) {
+          appSocket.connect();
+        }
 
       syncBusinessUser().then((data) => {
+        console.log("BUSINESS USER DATA:", data);
         if (data) {
           if (data.ciudadanoId || data.conductorId || data.personaId) {
             setUser(prev => prev ? {
@@ -306,6 +312,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setActiveRole(null);
     permissionStore.setActiveRole(null);
     localStorage.removeItem("activeRole");
+    if (!isMockSocket) appSocket.disconnect(); // 👈 nuevo
     logoutService();
   };
 

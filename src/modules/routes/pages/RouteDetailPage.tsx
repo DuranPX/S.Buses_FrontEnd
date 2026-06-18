@@ -14,6 +14,7 @@ import { useRouteSocket } from '../hooks/useRouteSocket';
 import { RouteMap } from '../components/RouteMap';
 import { StopTimeline } from '../components/StopTimeline';
 import { RouteRealtimePanel } from '../components/RouteRealtimePanel';
+import { StopAlertPanel } from '../../alerts/components/StopAlertPanel';
 import { Loader } from '../../../shared/components/ui/Loader';
 import { useMemo } from 'react';
 
@@ -108,6 +109,12 @@ const RouteDetailPage = () => {
         <div style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', paddingRight: '0.5rem', scrollbarWidth: 'thin' }}>
 
           <RouteRealtimePanel buses={activeBuses} hasDelay={hasDelay} />
+
+          <StopAlertPanel
+            routeId={route.id}
+            rutaNombre={route.nombre}
+            paraderos={route.paraderos}
+          />
 
           <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '1rem', padding: '1.25rem' }}>
             <h4 style={{ margin: '0 0 1rem', fontSize: '0.95rem', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
